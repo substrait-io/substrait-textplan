@@ -1,0 +1,123 @@
+name: Python Package
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+env:
+  ANTLR_JAR_URL: https://github.com/rrevenantt/antlr4rust/releases/download/antlr4-4.8-2-Rust0.3.0-beta/antlr4-4.8-2-SNAPSHOT-complete.jar
+  ANTLR_JAR_VERSION: antlr4-4.8-2-Rust0.3.0-beta
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Java for ANTLR (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre
+
+      - name: Install Java for ANTLR (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install openjdk@11
+
+      - name: Install Java for ANTLR (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install openjdk11 -y
+
+      - name: Cache ANTLR JAR
+        id: cache-antlr
+        uses: actions/cache@v4
+        with:
+          path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+          key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
+
+      - name: Download ANTLR JAR with Rust support (Unix)
+        if: steps.cache-antlr.outputs.cache-hit != 'true' && runner.os != 'Windows'
+        run: |
+          mkdir -p build-tools
+          curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+          echo "Downloaded ANTLR JAR"
+          unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+          echo "Verified JAR file integrity"
+
+      - name: Download ANTLR JAR with Rust support (Windows)
+        if: steps.cache-antlr.outputs.cache-hit != 'true' && runner.os == 'Windows'
+        run: |
+          mkdir -p build-tools
+          curl -L -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+          echo "Downloaded ANTLR JAR"
+
+      - name: Set ANTLR_JAR environment variable (Unix)
+        if: runner.os != 'Windows'
+        run: echo "ANTLR_JAR=$(pwd)/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar" >> $GITHUB_ENV
+
+      - name: Set ANTLR_JAR environment variable (Windows)
+        if: runner.os == 'Windows'
+        run: echo "ANTLR_JAR=${{ github.workspace }}\build-tools\antlr4-4.8-2-SNAPSHOT-complete.jar" >> $env:GITHUB_ENV
+
+      - name: Set GENERATE_ANTLR environment variable
+        run: echo "GENERATE_ANTLR=true" >> $GITHUB_ENV
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.5
+        env:
+          # Build for Python 3.8-3.12
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          # Skip 32-bit builds and musl (for now)
+          CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux_*"
+          # Ensure Rust is available in the build environment
+          CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && java -version"
+          CIBW_BEFORE_ALL_MACOS: "rustup update stable && java -version"
+          CIBW_BEFORE_ALL_WINDOWS: "rustup update stable && java -version"
+          CIBW_ENVIRONMENT_LINUX: "PATH=$HOME/.cargo/bin:$PATH GENERATE_ANTLR=true ANTLR_JAR=${{ github.workspace }}/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar"
+          CIBW_ENVIRONMENT_MACOS: "GENERATE_ANTLR=true ANTLR_JAR=${{ github.workspace }}/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar"
+          CIBW_ENVIRONMENT_WINDOWS: "GENERATE_ANTLR=true ANTLR_JAR=${{ github.workspace }}\\build-tools\\antlr4-4.8-2-SNAPSHOT-complete.jar"
+          # Test the wheels
+          CIBW_TEST_COMMAND: "python -m unittest discover -s {project}/python -v"
+        with:
+          package-dir: python
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+          retention-days: 7
+
+  publish:
+    name: Publish Python package
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: wheels-*
+          merge-multiple: true
+
+      - name: List downloaded files
+        run: ls -R dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/

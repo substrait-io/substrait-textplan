@@ -1,0 +1,21 @@
+# Include Python source
+include substrait_textplan.py
+include README.md
+include pyproject.toml
+
+# Include Rust source for building from source dist
+recursive-include ../src *.rs
+recursive-include ../build-tools *.rs
+include ../Cargo.toml
+include ../Cargo.lock
+include ../build.rs
+
+# Include grammar files for ANTLR generation
+recursive-include ../grammar *.g4
+
+# Exclude compiled artifacts and cache
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dylib
+global-exclude *.dll

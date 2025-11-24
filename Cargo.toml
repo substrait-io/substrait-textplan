@@ -1,0 +1,48 @@
+[package]
+name = "substrait-textplan"
+version = "0.1.0"
+edition = "2021"
+authors = ["David Sisson"]
+description = "Substrait textplan parser library in Rust"
+license = "Apache-2.0"
+
+[dependencies]
+substrait = { version = "0.61.0", features = ["serde"] }
+prost = { version = "0.14.1", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+thiserror = "2.0.17"
+log = "0.4.28"
+antlr-rust = "0.3.0-beta"
+prost-types = "0.14.1"
+prost-build = "0.14.1"
+walkdir = "2.5.0"
+
+[dependencies.bit-set]
+version = "0.5.3"
+
+[build-dependencies]
+prost = { version = "0.14.1", features = ["derive"] }
+prost-build = "0.14.1"
+prost-types = "0.14.1"
+walkdir = "2.5.0"
+phf = { version = "0.13.1", features = ["macros"] }
+tinytemplate = "1.2.1"
+serde = { version = "1.0.228", features = ["derive"] }
+
+[workspace]
+resolver = "2"
+
+[workspace.dependencies]
+bit-set = "0.5.3"
+
+[dev-dependencies]
+
+[lib]
+name = "substrait_textplan"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# TODO -- Consider adding features for the other language implementations.
+default = []
+python = []

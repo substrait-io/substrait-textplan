@@ -89,12 +89,15 @@ class TextPlan:
         if not ptr:
             return None
         
-        # First sizeof(size_t) bytes contain the length
-        len_ptr = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_size_t))
+        # First sizeof(uint64) bytes contain the length
+        len_ptr = ctypes.cast(ptr, ctypes.POINTER(ctypes.c_uint64))
         length = len_ptr.contents.value
-        
-        # Rest is the data
-        data_ptr = ctypes.cast(ctypes.addressof(ptr.contents) + ctypes.sizeof(ctypes.c_size_t), 
+
+        # Rest is the data. Read the buffer's address directly from the pointer
+        # rather than via addressof(ptr.contents), which takes the address of a
+        # temporary copy of the pointed-to value.
+        base_address = ctypes.cast(ptr, ctypes.c_void_p).value
+        data_ptr = ctypes.cast(base_address + ctypes.sizeof(ctypes.c_uint64),
                              ctypes.POINTER(ctypes.c_uint8 * length))
         
         # Copy the data

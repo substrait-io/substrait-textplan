@@ -59,15 +59,21 @@ pub fn symbol_table_to_text_plan(
     textplan::parser::parse_text::serialize_to_text(symbol_table, format)
 }
 
-/// FFI API for loading a textplan from a string and converting it to binary protobuf
+/// FFI API for loading a textplan from a string and converting it to binary protobuf.
+///
+/// The returned buffer is laid out as a `u64` length prefix followed by the plan
+/// bytes, and must be released with [`free_plan_bytes`].
+///
+/// # Safety
+///
+/// `text_ptr` must be null or a valid pointer to a NUL-terminated C string.
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn load_from_text(text_ptr: *const c_char) -> *mut u8 {
+pub unsafe extern "C" fn load_from_text(text_ptr: *const c_char) -> *mut u8 {
     if text_ptr.is_null() {
         return ptr::null_mut();
     }
 
-    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let c_str = CStr::from_ptr(text_ptr);
     let text = match c_str.to_str() {
         Ok(s) => s,
         Err(_) => return ptr::null_mut(),
@@ -75,62 +81,74 @@ pub extern "C" fn load_from_text(text_ptr: *const c_char) -> *mut u8 {
 
     match textplan::parser::load_from_text(text) {
         Ok(plan_bytes) => {
-            // Allocate memory for the binary plan that will be returned to C/C++
+            // Allocate memory for the binary plan that will be returned to C/C++.
+            // Layout: [u64 length prefix][plan bytes].
             let len = plan_bytes.len();
-            let result_size = len + std::mem::size_of::<usize>();
+            let result_size = len + std::mem::size_of::<u64>();
 
-            let layout =
-                std::alloc::Layout::from_size_align(result_size, 8).expect("Invalid layout");
+            // A panic across the FFI boundary is undefined behavior, so surface an
+            // allocation-sizing failure as a null pointer instead of expecting.
+            let layout = match std::alloc::Layout::from_size_align(result_size, 8) {
+                Ok(layout) => layout,
+                Err(_) => return ptr::null_mut(),
+            };
 
-            unsafe {
-                let ptr = std::alloc::alloc(layout);
-                if ptr.is_null() {
-                    return ptr::null_mut();
-                }
-
-                // First write the length
-                let len_ptr = ptr as *mut usize;
-                *len_ptr = len;
-
-                // Then write the actual data
-                let data_ptr = ptr.add(std::mem::size_of::<usize>());
-                std::ptr::copy_nonoverlapping(plan_bytes.as_ptr(), data_ptr, len);
-
-                ptr
+            let ptr = std::alloc::alloc(layout);
+            if ptr.is_null() {
+                return ptr::null_mut();
             }
+
+            // First write the length as a u64.
+            let len_ptr = ptr as *mut u64;
+            *len_ptr = len as u64;
+
+            // Then write the actual data.
+            let data_ptr = ptr.add(std::mem::size_of::<u64>());
+            std::ptr::copy_nonoverlapping(plan_bytes.as_ptr(), data_ptr, len);
+
+            ptr
         }
         Err(_) => ptr::null_mut(),
     }
 }
 
-/// FFI API for freeing memory allocated by this library
+/// FFI API for freeing memory allocated by this library.
+///
+/// # Safety
+///
+/// `ptr` must be null or a pointer previously returned by [`load_from_text`].
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn free_plan_bytes(ptr: *mut u8) {
+pub unsafe extern "C" fn free_plan_bytes(ptr: *mut u8) {
     if ptr.is_null() {
         return;
     }
 
-    unsafe {
-        let len_ptr = ptr as *const usize;
-        let len = *len_ptr;
-        let result_size = len + std::mem::size_of::<usize>();
+    let len_ptr = ptr as *const u64;
+    let len = *len_ptr as usize;
+    let result_size = len + std::mem::size_of::<u64>();
 
-        let layout = std::alloc::Layout::from_size_align(result_size, 8).expect("Invalid layout");
+    // Recompute the same layout used at allocation time; bail out rather than
+    // panicking across the FFI boundary if it somehow fails to reconstruct.
+    let layout = match std::alloc::Layout::from_size_align(result_size, 8) {
+        Ok(layout) => layout,
+        Err(_) => return,
+    };
 
-        std::alloc::dealloc(ptr, layout);
-    }
+    std::alloc::dealloc(ptr, layout);
 }
 
-/// FFI API for saving a binary plan to textplan format
+/// FFI API for saving a binary plan to textplan format.
+///
+/// # Safety
+///
+/// `bytes_ptr` must be null or a valid pointer to at least `bytes_len` bytes.
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn save_to_text(bytes_ptr: *const u8, bytes_len: usize) -> *mut c_char {
+pub unsafe extern "C" fn save_to_text(bytes_ptr: *const u8, bytes_len: usize) -> *mut c_char {
     if bytes_ptr.is_null() {
         return ptr::null_mut();
     }
 
-    let bytes = unsafe { std::slice::from_raw_parts(bytes_ptr, bytes_len) };
+    let bytes = std::slice::from_raw_parts(bytes_ptr, bytes_len);
 
     match textplan::converter::save_to_text(bytes) {
         Ok(text_plan) => match CString::new(text_plan) {
@@ -141,14 +159,15 @@ pub extern "C" fn save_to_text(bytes_ptr: *const u8, bytes_len: usize) -> *mut c
     }
 }
 
-/// FFI API for freeing memory allocated by this library
+/// FFI API for freeing memory allocated by this library.
+///
+/// # Safety
+///
+/// `text_ptr` must be null or a pointer previously returned by [`save_to_text`].
 #[no_mangle]
-#[allow(clippy::not_unsafe_ptr_arg_deref)]
-pub extern "C" fn free_text_plan(text_ptr: *mut c_char) {
+pub unsafe extern "C" fn free_text_plan(text_ptr: *mut c_char) {
     if !text_ptr.is_null() {
-        unsafe {
-            let _ = CString::from_raw(text_ptr);
-            // CString destructor will free the memory
-        }
+        let _ = CString::from_raw(text_ptr);
+        // CString destructor will free the memory.
     }
 }

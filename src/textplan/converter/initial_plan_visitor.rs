@@ -69,7 +69,7 @@ fn rel_type_case_name(relation: &substrait::Rel) -> &'static str {
         match oneof {
             substrait::rel::RelType::Read(_) => "read",
             substrait::rel::RelType::Filter(_) => "filter",
-            substrait::rel::RelType::Fetch(_) => "root",
+            substrait::rel::RelType::Fetch(_) => "fetch",
             substrait::rel::RelType::Aggregate(_) => "aggregate",
             substrait::rel::RelType::Sort(_) => "sort",
             substrait::rel::RelType::Join(_) => "join",
@@ -985,5 +985,27 @@ impl PlanProtoVisitor for InitialPlanVisitor {
             // For now, we'll use the deprecated field in add_grouping_to_relation.
             // The proper solution is to have the parser always output the new format.
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fetch_rel() -> substrait::Rel {
+        substrait::Rel {
+            rel_type: Some(substrait::rel::RelType::Fetch(Box::new(
+                substrait::FetchRel::default(),
+            ))),
+            ..Default::default()
+        }
+    }
+
+    /// A fetch relation must map to the case name "fetch", which drives both the
+    /// emitted symbol name and its location field path. It previously collided
+    /// with the "root" case name.
+    #[test]
+    fn fetch_relation_case_name_is_fetch() {
+        assert_eq!(rel_type_case_name(&fetch_rel()), "fetch");
     }
 }

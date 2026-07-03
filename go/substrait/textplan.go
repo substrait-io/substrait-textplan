@@ -44,8 +44,8 @@ func (tp *TextPlan) LoadFromText(text string) ([]byte, error) {
 		return nil, errors.New("failed to load text plan")
 	}
 
-	// First sizeof(size_t) bytes contain the length
-	lenPtr := (*C.size_t)(ptr)
+	// First sizeof(uint64) bytes contain the length
+	lenPtr := (*C.uint64_t)(ptr)
 	length := int(*lenPtr)
 
 	// Rest is the data

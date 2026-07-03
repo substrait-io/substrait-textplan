@@ -210,9 +210,7 @@ impl SymbolInfo {
 
     /// Sets the schema associated with this symbol.
     pub fn set_schema(&self, schema: Arc<SymbolInfo>) {
-        if let Ok(mut s) = self.schema.write() {
-            *s = Some(schema);
-        }
+        *self.schema.write().unwrap() = Some(schema);
     }
 
     /// Gets the source associated with this symbol.
@@ -222,9 +220,7 @@ impl SymbolInfo {
 
     /// Sets the source associated with this symbol.
     pub fn set_source(&self, source: Arc<SymbolInfo>) {
-        if let Ok(mut s) = self.source.write() {
-            *s = Some(source);
-        }
+        *self.source.write().unwrap() = Some(source);
     }
 
     /// Sets the permanent location of the symbol.
@@ -234,23 +230,17 @@ impl SymbolInfo {
 
     /// Sets the location of the parent query.
     pub fn set_parent_query_location<L: Into<Box<dyn Location>>>(&self, location: L) {
-        if let Ok(mut loc) = self.parent_query_location.write() {
-            *loc = location.into();
-        }
+        *self.parent_query_location.write().unwrap() = location.into();
     }
 
     /// Sets the index of the parent query.
     pub fn set_parent_query_index(&self, index: i32) {
-        if let Ok(mut idx) = self.parent_query_index.write() {
-            *idx = index;
-        }
+        *self.parent_query_index.write().unwrap() = index;
     }
 
     /// Sets the subtype of the symbol.
     pub fn set_subtype(&self, subtype: Box<dyn Any + Send + Sync>) {
-        if let Ok(mut s) = self.subtype.write() {
-            *s = Some(subtype);
-        }
+        *self.subtype.write().unwrap() = Some(subtype);
     }
 
     /// Sets the blob of the symbol.
@@ -260,16 +250,17 @@ impl SymbolInfo {
 
     /// Returns the schema associated with this symbol, if any.
     pub fn schema(&self) -> Option<Arc<SymbolInfo>> {
-        self.schema.read().ok().and_then(|s| s.clone())
+        self.schema.read().unwrap().clone()
     }
 
     /// Returns a copy of the subtype of the symbol, if any.
     /// This method requires T to be Copy since we're accessing through RwLock.
     pub fn subtype<T: 'static + Copy>(&self) -> Option<T> {
-        self.subtype.read().ok().and_then(|s| {
-            s.as_ref()
-                .and_then(|boxed| boxed.downcast_ref::<T>().copied())
-        })
+        self.subtype
+            .read()
+            .unwrap()
+            .as_ref()
+            .and_then(|boxed| boxed.downcast_ref::<T>().copied())
     }
 
     /// Provides access to the blob of the symbol through the mutex, if any.

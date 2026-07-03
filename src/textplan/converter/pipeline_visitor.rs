@@ -24,8 +24,9 @@ pub struct PipelineVisitor {
     symbol_table: crate::textplan::symbol_table::SymbolTable,
     /// Current relation context for scope resolution
     current_relation_scope: Option<Arc<crate::textplan::SymbolInfo>>,
-    /// Previous relation scope (saved for restoration)
-    previous_relation_scope: Option<Arc<crate::textplan::SymbolInfo>>,
+    /// Stack of enclosing relation scopes, saved for restoration as nested
+    /// relations are entered and exited.
+    scope_stack: Vec<Option<Arc<crate::textplan::SymbolInfo>>>,
     /// Current location in the protocol buffer structure
     current_location: ProtoLocation,
     /// Flag to prevent infinite recursion when traversing subquery relations
@@ -38,7 +39,7 @@ impl PipelineVisitor {
         Self {
             symbol_table,
             current_relation_scope: None,
-            previous_relation_scope: None,
+            scope_stack: Vec::new(),
             current_location: ProtoLocation::default(),
             in_subquery_traversal: false,
         }
@@ -264,9 +265,10 @@ impl PlanProtoVisitor for PipelineVisitor {
     }
 
     fn pre_process_rel(&mut self, _rel: &substrait::Rel) {
-        // Set current_relation_scope before visiting children so expressions can access it
-        // Save the previous scope for restoration in post_process_rel
-        self.previous_relation_scope = self.current_relation_scope.clone();
+        // Set current_relation_scope before visiting children so expressions can access it.
+        // Push the enclosing scope so each nested relation restores its own parent scope
+        // in post_process_rel.
+        self.scope_stack.push(self.current_relation_scope.clone());
 
         let symbol = self
             .symbol_table()
@@ -469,8 +471,8 @@ impl PlanProtoVisitor for PipelineVisitor {
             });
         }
 
-        // Restore the previous scope
-        self.current_relation_scope = self.previous_relation_scope.clone();
+        // Restore the enclosing scope saved in pre_process_rel.
+        self.current_relation_scope = self.scope_stack.pop().flatten();
     }
 
     fn post_process_plan_rel(&mut self, relation: &substrait::PlanRel) {
@@ -605,5 +607,80 @@ impl PlanProtoVisitor for PipelineVisitor {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::textplan::symbol_table::SymbolTable;
+
+    fn scope_name(visitor: &PipelineVisitor) -> Option<String> {
+        visitor
+            .current_relation_scope
+            .as_ref()
+            .map(|s| s.name().to_string())
+    }
+
+    /// Relations can nest several levels deep (e.g. project -> filter -> read).
+    /// Entering a relation must save the enclosing scope and exiting must restore
+    /// exactly that scope, so a single save slot is insufficient for >2 levels.
+    #[test]
+    fn nested_relation_scopes_are_restored_per_level() {
+        let mut symbol_table = SymbolTable::default();
+        let loc_a = ProtoLocation::default().field("a");
+        let loc_b = loc_a.field("b");
+        let loc_c = loc_b.field("c");
+
+        symbol_table.define_symbol(
+            "a".to_string(),
+            loc_a.clone(),
+            SymbolType::Relation,
+            None,
+            None,
+        );
+        symbol_table.define_symbol(
+            "b".to_string(),
+            loc_b.clone(),
+            SymbolType::Relation,
+            None,
+            None,
+        );
+        symbol_table.define_symbol(
+            "c".to_string(),
+            loc_c.clone(),
+            SymbolType::Relation,
+            None,
+            None,
+        );
+
+        let mut visitor = PipelineVisitor::new(symbol_table);
+        let rel = substrait::Rel::default();
+
+        // Descend a -> b -> c, each level becoming the current scope.
+        visitor.set_location(loc_a.clone());
+        visitor.pre_process_rel(&rel);
+        assert_eq!(scope_name(&visitor).as_deref(), Some("a"));
+
+        visitor.set_location(loc_b.clone());
+        visitor.pre_process_rel(&rel);
+        assert_eq!(scope_name(&visitor).as_deref(), Some("b"));
+
+        visitor.set_location(loc_c.clone());
+        visitor.pre_process_rel(&rel);
+        assert_eq!(scope_name(&visitor).as_deref(), Some("c"));
+
+        // Unwind: each exit restores its own parent scope.
+        visitor.set_location(loc_c);
+        visitor.post_process_rel(&rel);
+        assert_eq!(scope_name(&visitor).as_deref(), Some("b"));
+
+        visitor.set_location(loc_b);
+        visitor.post_process_rel(&rel);
+        assert_eq!(scope_name(&visitor).as_deref(), Some("a"));
+
+        visitor.set_location(loc_a);
+        visitor.post_process_rel(&rel);
+        assert_eq!(scope_name(&visitor), None);
     }
 }

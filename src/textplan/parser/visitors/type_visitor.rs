@@ -29,6 +29,7 @@ use super::{token_to_location, BasePlanVisitor, PlanVisitor};
 /// symbol table and error handling functionality.
 pub struct TypeVisitor<'input> {
     base: BasePlanVisitor,
+    type_parser: TypeTextParser<'input>,
     _phantom: std::marker::PhantomData<&'input ()>,
 }
 
@@ -36,6 +37,7 @@ impl<'input> TypeVisitor<'input> {
     /// Creates a new TypeVisitor.
     pub fn new(symbol_table: SymbolTable, error_listener: Arc<ErrorListener>) -> Self {
         Self {
+            type_parser: TypeTextParser::new(error_listener.clone()),
             base: BasePlanVisitor::new(symbol_table, error_listener),
             _phantom: std::marker::PhantomData,
         }
@@ -49,6 +51,45 @@ impl<'input> TypeVisitor<'input> {
     /// Consumes the visitor and returns ownership of its symbol table.
     pub fn into_symbol_table(self) -> SymbolTable {
         self.base.into_symbol_table()
+    }
+
+    /// Parses a textual type description into a Substrait `Type`, delegating to
+    /// the symbol-table-free [`TypeTextParser`].
+    pub fn text_to_type_proto(
+        &self,
+        ctx: &dyn SubstraitPlanParserContext<'input>,
+        type_text: &str,
+    ) -> Type {
+        self.type_parser.text_to_type_proto(ctx, type_text)
+    }
+
+    /// Reports a parse error, delegating to the type parser's error listener.
+    pub fn add_error<'a>(
+        &self,
+        token: &impl std::ops::Deref<Target = GenericToken<std::borrow::Cow<'a, str>>>,
+        message: &str,
+    ) {
+        self.type_parser.add_error(token, message);
+    }
+}
+
+/// A lightweight, read-only parser that converts textual type descriptions into
+/// Substrait `Type` protos.
+///
+/// Type parsing only needs an error listener, never the symbol table, so callers
+/// can parse types without cloning the symbol table.
+pub struct TypeTextParser<'input> {
+    error_listener: Arc<ErrorListener>,
+    _phantom: std::marker::PhantomData<&'input ()>,
+}
+
+impl<'input> TypeTextParser<'input> {
+    /// Creates a new type-text parser.
+    pub fn new(error_listener: Arc<ErrorListener>) -> Self {
+        Self {
+            error_listener,
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     /// Converts a text representation of a type to a Substrait protobuf Type.
@@ -403,16 +444,6 @@ impl<'input> TypeVisitor<'input> {
         result
     }
 
-    /// Determines if the context is inside a struct literal with an external type.
-    pub fn inside_struct_literal_with_external_type(
-        &self,
-        _ctx: &dyn SubstraitPlanParserContext<'input>,
-    ) -> bool {
-        // This would check up the parse tree to determine context
-        // For now, default to false
-        false
-    }
-
     /// Adds an error message to the error listener.
     pub fn add_error<'a>(
         &self,
@@ -420,9 +451,7 @@ impl<'input> TypeVisitor<'input> {
         message: &str,
     ) {
         let location = token_to_location(token);
-        self.base
-            .error_listener()
-            .add_error(message.to_string(), location);
+        self.error_listener.add_error(message.to_string(), location);
     }
 }
 

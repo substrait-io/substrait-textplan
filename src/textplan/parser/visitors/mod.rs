@@ -29,7 +29,7 @@ pub use main_visitor::MainPlanVisitor;
 pub use pipeline_visitor::PipelineVisitor;
 pub use relation_visitor::RelationVisitor;
 pub use subquery_visitor::SubqueryRelationVisitor;
-pub use type_visitor::TypeVisitor;
+pub use type_visitor::{TypeTextParser, TypeVisitor};
 
 /// Helper function to convert ANTLR token to TextLocation
 pub fn token_to_location<'a>(

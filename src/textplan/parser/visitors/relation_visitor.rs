@@ -19,7 +19,7 @@ use crate::textplan::parser::error_listener::ErrorListener;
 use crate::textplan::symbol_table::{RelationType, SymbolInfo, SymbolTable, SymbolType};
 use ::substrait::proto::rel::RelType;
 
-use super::{token_to_location, PlanVisitor, TypeVisitor};
+use super::{token_to_location, PlanVisitor, TypeTextParser};
 
 /// The RelationVisitor processes relation definitions and expressions.
 ///
@@ -1410,10 +1410,9 @@ impl<'input> RelationVisitor<'input> {
         // Extract output type if present (from ARROW literal_complex_type)
         let output_type = if let Some(type_ctx) = ctx.literal_complex_type() {
             let type_text = type_ctx.get_text();
-            // Create a temporary TypeVisitor to parse the type
-            let type_visitor =
-                TypeVisitor::new(self.symbol_table.clone(), self.error_listener.clone());
-            Some(type_visitor.text_to_type_proto(ctx, &type_text))
+            // Parse the type using the symbol-table-free type parser.
+            let type_parser = TypeTextParser::new(self.error_listener.clone());
+            Some(type_parser.text_to_type_proto(ctx, &type_text))
         } else {
             None
         };
@@ -1457,10 +1456,9 @@ impl<'input> RelationVisitor<'input> {
         // Get the target type
         let mut target_type = if let Some(type_ctx) = ctx.literal_complex_type() {
             let type_text = type_ctx.get_text();
-            // Create a temporary TypeVisitor to parse the type
-            let type_visitor =
-                TypeVisitor::new(self.symbol_table.clone(), self.error_listener.clone());
-            type_visitor.text_to_type_proto(ctx, &type_text)
+            // Parse the type using the symbol-table-free type parser.
+            let type_parser = TypeTextParser::new(self.error_listener.clone());
+            type_parser.text_to_type_proto(ctx, &type_text)
         } else {
             // No target type - return placeholder
             return ::substrait::proto::Expression {
@@ -2540,11 +2538,8 @@ impl<'input> SubstraitPlanParserVisitor<'input> for RelationVisitor<'input> {
                             // Extract output type if present
                             let out_type = if let Some(type_ctx) = func_ctx.literal_complex_type() {
                                 let type_text = type_ctx.get_text();
-                                let type_visitor = TypeVisitor::new(
-                                    self.symbol_table.clone(),
-                                    self.error_listener.clone(),
-                                );
-                                Some(type_visitor.text_to_type_proto(func_ctx, &type_text))
+                                let type_parser = TypeTextParser::new(self.error_listener.clone());
+                                Some(type_parser.text_to_type_proto(func_ctx, &type_text))
                             } else {
                                 None
                             };

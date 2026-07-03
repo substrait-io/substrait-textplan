@@ -30,6 +30,13 @@ impl BasePlanVisitor {
     pub fn symbol_table_mut(&mut self) -> &mut SymbolTable {
         &mut self.symbol_table
     }
+
+    /// Consumes the visitor and returns ownership of its symbol table.
+    ///
+    /// Used to hand the table off to the next parsing phase without copying it.
+    pub fn into_symbol_table(self) -> SymbolTable {
+        self.symbol_table
+    }
 }
 
 impl<'input> PlanVisitor<'input> for BasePlanVisitor {
@@ -37,7 +44,7 @@ impl<'input> PlanVisitor<'input> for BasePlanVisitor {
         self.error_listener.clone()
     }
 
-    fn symbol_table(&self) -> SymbolTable {
-        self.symbol_table.clone()
+    fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
     }
 }

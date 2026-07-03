@@ -90,9 +90,14 @@ impl<'input> RelationVisitor<'input> {
         index
     }
 
-    /// Gets the symbol table.
-    pub fn symbol_table(&self) -> SymbolTable {
-        self.symbol_table.clone()
+    /// Gets a read-only reference to the symbol table.
+    pub fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
+    }
+
+    /// Consumes the visitor and returns ownership of its symbol table.
+    pub fn into_symbol_table(self) -> SymbolTable {
+        self.symbol_table
     }
 
     /// Gets a mutable reference to the symbol table.
@@ -2170,8 +2175,8 @@ impl<'input> PlanVisitor<'input> for RelationVisitor<'input> {
         self.error_listener.clone()
     }
 
-    fn symbol_table(&self) -> SymbolTable {
-        self.symbol_table.clone()
+    fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
     }
 }
 

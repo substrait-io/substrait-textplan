@@ -121,6 +121,6 @@ pub trait PlanVisitor<'input> {
     /// Gets the error listener for this visitor.
     fn error_listener(&self) -> Arc<ErrorListener>;
 
-    /// Gets the symbol table for this visitor.
-    fn symbol_table(&self) -> SymbolTable;
+    /// Gets a read-only reference to the symbol table for this visitor.
+    fn symbol_table(&self) -> &SymbolTable;
 }

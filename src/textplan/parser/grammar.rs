@@ -126,7 +126,7 @@ pub fn parse_string(text: &str) -> Result<ParseResult, String> {
     let mut type_visitor =
         crate::textplan::parser::visitors::TypeVisitor::new(symbol_table, error_listener.clone());
     crate::textplan::parser::visitors::visit_plan(&mut type_visitor, plan_result.as_ref());
-    symbol_table = type_visitor.symbol_table();
+    symbol_table = type_visitor.into_symbol_table();
 
     // Phase 2: Main plan visitor
     println!("Applying MainPlanVisitor");
@@ -135,7 +135,7 @@ pub fn parse_string(text: &str) -> Result<ParseResult, String> {
         error_listener.clone(),
     );
     crate::textplan::parser::visitors::visit_plan(&mut plan_visitor, plan_result.as_ref());
-    symbol_table = plan_visitor.symbol_table();
+    symbol_table = plan_visitor.into_symbol_table();
 
     // Phase 3: Pipeline visitor
     println!("Applying PipelineVisitor");
@@ -144,7 +144,7 @@ pub fn parse_string(text: &str) -> Result<ParseResult, String> {
         error_listener.clone(),
     );
     crate::textplan::parser::visitors::visit_plan(&mut pipeline_visitor, plan_result.as_ref());
-    symbol_table = pipeline_visitor.symbol_table();
+    symbol_table = pipeline_visitor.into_symbol_table();
 
     // Phase 4: Relation visitor
     println!("Applying RelationVisitor");
@@ -154,7 +154,7 @@ pub fn parse_string(text: &str) -> Result<ParseResult, String> {
     );
 
     crate::textplan::parser::visitors::visit_plan(&mut relation_visitor, plan_result.as_ref());
-    symbol_table = relation_visitor.symbol_table();
+    symbol_table = relation_visitor.into_symbol_table();
 
     // Phase 5: Subquery relation visitor
     println!("Applying SubqueryRelationVisitor");
@@ -167,7 +167,7 @@ pub fn parse_string(text: &str) -> Result<ParseResult, String> {
     // Populate sub_query_pipelines now that parent_query_index has been set during the visit
     subquery_visitor.finalize();
 
-    symbol_table = subquery_visitor.symbol_table();
+    symbol_table = subquery_visitor.into_symbol_table();
 
     // Outer references were already fixed by SubqueryRelationVisitor during its visit pass.
     // No need for additional fixing here.

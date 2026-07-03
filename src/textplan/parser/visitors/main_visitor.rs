@@ -72,8 +72,13 @@ impl<'input> MainPlanVisitor<'input> {
     }
 
     /// Gets the symbol table for this visitor.
-    pub fn get_symbol_table(&self) -> SymbolTable {
+    pub fn get_symbol_table(&self) -> &SymbolTable {
         self.type_visitor.symbol_table()
+    }
+
+    /// Consumes the visitor and returns ownership of its symbol table.
+    pub fn into_symbol_table(self) -> SymbolTable {
+        self.type_visitor.into_symbol_table()
     }
 
     /// Adds an error message to the error listener.
@@ -760,7 +765,7 @@ impl<'input> PlanVisitor<'input> for MainPlanVisitor<'input> {
         self.type_visitor.error_listener()
     }
 
-    fn symbol_table(&self) -> SymbolTable {
+    fn symbol_table(&self) -> &SymbolTable {
         self.type_visitor.symbol_table()
     }
 }

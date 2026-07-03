@@ -46,6 +46,11 @@ impl<'input> TypeVisitor<'input> {
         self.base.symbol_table_mut()
     }
 
+    /// Consumes the visitor and returns ownership of its symbol table.
+    pub fn into_symbol_table(self) -> SymbolTable {
+        self.base.into_symbol_table()
+    }
+
     /// Converts a text representation of a type to a Substrait protobuf Type.
     /// This follows the C++ substrait type library logic for handling nullable markers.
     pub fn text_to_type_proto(
@@ -426,7 +431,7 @@ impl<'input> PlanVisitor<'input> for TypeVisitor<'input> {
         self.base.error_listener()
     }
 
-    fn symbol_table(&self) -> SymbolTable {
+    fn symbol_table(&self) -> &SymbolTable {
         self.base.symbol_table()
     }
 }

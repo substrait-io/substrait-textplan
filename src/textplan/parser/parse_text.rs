@@ -133,7 +133,7 @@ fn apply_type_visitor(
     crate::textplan::parser::visitors::visit_plan(&mut type_visitor, plan_ctx);
 
     // Return the updated symbol table
-    type_visitor.symbol_table()
+    type_visitor.into_symbol_table()
 }
 
 /// Phase 2: Applies the MainPlanVisitor to the parse tree
@@ -154,7 +154,7 @@ fn apply_plan_visitor(
     crate::textplan::parser::visitors::visit_plan(&mut plan_visitor, plan_ctx);
 
     // Return the updated symbol table
-    plan_visitor.symbol_table()
+    plan_visitor.into_symbol_table()
 }
 
 /// Phase 3: Applies the PipelineVisitor to the parse tree
@@ -175,7 +175,7 @@ fn apply_pipeline_visitor(
     crate::textplan::parser::visitors::visit_plan(&mut pipeline_visitor, plan_ctx);
 
     // Return the updated symbol table
-    pipeline_visitor.symbol_table()
+    pipeline_visitor.into_symbol_table()
 }
 
 /// Phase 4: Applies the RelationVisitor to the parse tree
@@ -196,7 +196,7 @@ fn apply_relation_visitor(
     crate::textplan::parser::visitors::visit_plan(&mut relation_visitor, plan_ctx);
 
     // Return the updated symbol table
-    relation_visitor.symbol_table()
+    relation_visitor.into_symbol_table()
 }
 
 /// Phase 5: Applies the SubqueryRelationVisitor to the parse tree
@@ -219,5 +219,5 @@ fn apply_subquery_visitor(
     crate::textplan::parser::visitors::visit_plan(&mut subquery_visitor, plan_ctx);
 
     // Return the updated symbol table
-    subquery_visitor.symbol_table()
+    subquery_visitor.into_symbol_table()
 }

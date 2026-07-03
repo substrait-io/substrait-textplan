@@ -38,9 +38,14 @@ impl<'input> PipelineVisitor<'input> {
         }
     }
 
-    /// Gets the symbol table.
-    pub fn symbol_table(&self) -> SymbolTable {
-        self.symbol_table.clone()
+    /// Gets a read-only reference to the symbol table.
+    pub fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
+    }
+
+    /// Consumes the visitor and returns ownership of its symbol table.
+    pub fn into_symbol_table(self) -> SymbolTable {
+        self.symbol_table
     }
 
     /// Gets the error listener.
@@ -102,8 +107,8 @@ impl<'input> PlanVisitor<'input> for PipelineVisitor<'input> {
         self.error_listener.clone()
     }
 
-    fn symbol_table(&self) -> SymbolTable {
-        self.symbol_table.clone()
+    fn symbol_table(&self) -> &SymbolTable {
+        &self.symbol_table
     }
 }
 

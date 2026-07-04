@@ -40,7 +40,7 @@ jobs:
 
       - name: Cache ANTLR JAR
         id: cache-antlr
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
           key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}

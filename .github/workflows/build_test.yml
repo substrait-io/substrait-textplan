@@ -21,7 +21,7 @@ jobs:
         rust: [stable]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
 
@@ -38,7 +38,7 @@ jobs:
 
     - name: Cache ANTLR JAR
       id: cache-antlr
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
         key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
@@ -98,7 +98,7 @@ jobs:
       run: cargo fmt -- --check
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -116,7 +116,7 @@ jobs:
         rust: [stable]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
 
@@ -133,7 +133,7 @@ jobs:
 
     - name: Cache ANTLR JAR
       id: cache-antlr
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
         key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
@@ -184,7 +184,7 @@ jobs:
 
     - name: Upload library artifact (macOS)
       if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libsubstrait_textplan-macos
         path: |
@@ -193,7 +193,7 @@ jobs:
 
     - name: Upload library artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libsubstrait_textplan-linux
         path: |

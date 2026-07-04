@@ -184,7 +184,7 @@ jobs:
 
     - name: Upload library artifact (macOS)
       if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libsubstrait_textplan-macos
         path: |
@@ -193,7 +193,7 @@ jobs:
 
     - name: Upload library artifact (Linux)
       if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libsubstrait_textplan-linux
         path: |

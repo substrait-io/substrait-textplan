@@ -34,7 +34,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 resolver = "2"
 
 [workspace.dependencies]
-bit-set = "0.5.3"
+bit-set = "0.10.0"
 
 [dev-dependencies]
 

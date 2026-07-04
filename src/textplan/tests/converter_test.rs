@@ -168,4 +168,65 @@ mod tests {
             }
         }
     }
+
+    /// Round-trip a plan whose read relation carries a base schema with compound
+    /// (`list`/`map`/`struct`) column types: text -> symbol table -> binary ->
+    /// text. This exercises the compound-type printer through the full pipeline
+    /// (the schema types are embedded in the binary `ReadRel.base_schema` and
+    /// re-emitted via `ExpressionPrinter::print_type`).
+    #[test]
+    fn test_roundtrip_compound_type_schema() {
+        use crate::proto::load_plan_from_binary;
+
+        let input = r##"pipelines {
+  myread -> root;
+}
+
+schema myschema {
+  a i32;
+  b list<i32>;
+  c map<string, i64>;
+  d struct<i32, string?>;
+}
+
+source named_table mytable {
+  names = [
+    "mytable",
+  ]
+}
+
+read relation myread {
+  base_schema myschema;
+  source mytable;
+}
+"##;
+
+        let parse_result = parse_stream(input);
+        assert!(
+            parse_result.successful(),
+            "parse failed: {:?}",
+            parse_result.all_errors()
+        );
+
+        let symbol_table = parse_result.symbol_table();
+        let binary = save_to_binary(&symbol_table).expect("save_to_binary failed");
+        let plan = load_plan_from_binary(&binary).expect("load_plan_from_binary failed");
+        let text = process_plan_with_visitor(&plan).expect("process_plan_with_visitor failed");
+
+        assert!(
+            text.contains("list<i32>"),
+            "missing list type in:\n{}",
+            text
+        );
+        assert!(
+            text.contains("map<string, i64>"),
+            "missing map type in:\n{}",
+            text
+        );
+        assert!(
+            text.contains("struct<i32, string?>"),
+            "missing struct type in:\n{}",
+            text
+        );
+    }
 }

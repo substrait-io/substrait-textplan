@@ -19,7 +19,7 @@ pub struct RelationData {
     pub sub_query_pipelines: Vec<Arc<SymbolInfo>>,
     // The information corresponding to the relation without any references to
     // other relations or inputs.
-    pub relation: substrait::proto::Rel,
+    pub relation: substrait::Rel,
     // Source stores the input symbol of a read relation.
     pub source: Option<Arc<SymbolInfo>>,
     // Schema keeps track schema used in this relation.
@@ -51,7 +51,7 @@ pub struct RelationData {
 
 impl RelationData {
     // Basic constructor
-    pub fn new(relation: substrait::proto::Rel) -> Self {
+    pub fn new(relation: substrait::Rel) -> Self {
         RelationData {
             pipeline_start: None,
             continuing_pipeline: None,
@@ -78,7 +78,7 @@ impl RelationData {
             continuing_pipeline: None,
             new_pipelines: Vec::new(),
             sub_query_pipelines: Vec::new(),
-            relation: substrait::proto::Rel::default(),
+            relation: substrait::Rel::default(),
             source: None,
             schema: None,
             schema_name: None,

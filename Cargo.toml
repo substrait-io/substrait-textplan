@@ -7,7 +7,10 @@ description = "Substrait textplan parser library in Rust"
 license = "Apache-2.0"
 
 [dependencies]
-substrait = { version = "0.63.0", features = ["serde"] }
+# Substrait protobuf types are now produced by substrait-packaging's
+# substrait-prost crate (generated at build time via prost/protoc). It is
+# renamed to `substrait` here so the (root-level) type paths line up.
+substrait = { package = "substrait-prost", version = "=0.87.0-alpha.4", features = ["serde"] }
 prost = { version = "0.14.1", features = ["derive"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"

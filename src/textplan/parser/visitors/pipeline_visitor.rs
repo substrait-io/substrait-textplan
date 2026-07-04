@@ -315,14 +315,14 @@ impl<'input> SubstraitPlanParserVisitor<'input> for PipelineVisitor<'input> {
                 "terminal"
             } else {
                 match &relation_data.relation.rel_type {
-                    Some(::substrait::proto::rel::RelType::Join(_)) => "binary",
-                    Some(::substrait::proto::rel::RelType::Cross(_)) => "binary",
-                    Some(::substrait::proto::rel::RelType::Set(_)) => "binary",
-                    Some(::substrait::proto::rel::RelType::HashJoin(_)) => "binary",
-                    Some(::substrait::proto::rel::RelType::MergeJoin(_)) => "binary",
-                    Some(::substrait::proto::rel::RelType::Fetch(_)) => "unary",
-                    Some(::substrait::proto::rel::RelType::ExtensionSingle(_)) => "unary",
-                    Some(::substrait::proto::rel::RelType::ExtensionLeaf(_)) => "terminal",
+                    Some(::substrait::rel::RelType::Join(_)) => "binary",
+                    Some(::substrait::rel::RelType::Cross(_)) => "binary",
+                    Some(::substrait::rel::RelType::Set(_)) => "binary",
+                    Some(::substrait::rel::RelType::HashJoin(_)) => "binary",
+                    Some(::substrait::rel::RelType::MergeJoin(_)) => "binary",
+                    Some(::substrait::rel::RelType::Fetch(_)) => "unary",
+                    Some(::substrait::rel::RelType::ExtensionSingle(_)) => "unary",
+                    Some(::substrait::rel::RelType::ExtensionLeaf(_)) => "terminal",
                     _ => "unary",
                 }
             };

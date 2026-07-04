@@ -38,9 +38,9 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints an expression to a string.
     pub fn print_expression(
         &mut self,
-        expr: &::substrait::proto::Expression,
+        expr: &::substrait::Expression,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::RexType;
+        use ::substrait::expression::RexType;
 
         match &expr.rex_type {
             Some(RexType::Literal(lit)) => self.print_literal(lit),
@@ -68,6 +68,9 @@ impl<'a> ExpressionPrinter<'a> {
             Some(RexType::LambdaInvocation(_)) => {
                 Ok("LAMBDA_INVOCATION_NOT_YET_IMPLEMENTED".to_string())
             }
+            Some(RexType::ExecutionContextVariable(_)) => {
+                Ok("EXECUTION_CONTEXT_VARIABLE_NOT_YET_IMPLEMENTED".to_string())
+            }
             None => Err(TextPlanError::InvalidExpression(
                 "Expression has no rex_type".to_string(),
             )),
@@ -77,9 +80,9 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints a literal expression.
     fn print_literal(
         &self,
-        literal: &::substrait::proto::expression::Literal,
+        literal: &::substrait::expression::Literal,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::literal::LiteralType;
+        use ::substrait::expression::literal::LiteralType;
 
         let mut result = match &literal.literal_type {
             Some(LiteralType::Boolean(b)) => b.to_string(),
@@ -109,7 +112,7 @@ impl<'a> ExpressionPrinter<'a> {
             Some(LiteralType::IntervalDayToSecond(interval)) => {
                 // IntervalDayToSecond: Use deprecated microseconds format for compatibility
                 // The deprecated format stores microseconds in precision_mode.Microseconds variant
-                use ::substrait::proto::expression::literal::interval_day_to_second::PrecisionMode;
+                use ::substrait::expression::literal::interval_day_to_second::PrecisionMode;
 
                 let microseconds = match &interval.precision_mode {
                     Some(PrecisionMode::Microseconds(micros)) => *micros,
@@ -195,19 +198,17 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints a field reference (selection).
     fn print_field_reference(
         &self,
-        field_ref: &::substrait::proto::expression::FieldReference,
+        field_ref: &::substrait::expression::FieldReference,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::field_reference::ReferenceType;
+        use ::substrait::expression::field_reference::ReferenceType;
 
         match &field_ref.reference_type {
             Some(ReferenceType::DirectReference(direct_ref)) => {
                 // Extract outer reference if it exists from root_type
                 let outer_ref = match &field_ref.root_type {
-                    Some(
-                        ::substrait::proto::expression::field_reference::RootType::OuterReference(
-                            o,
-                        ),
-                    ) => Some(o),
+                    Some(::substrait::expression::field_reference::RootType::OuterReference(o)) => {
+                        Some(o)
+                    }
                     _ => None,
                 };
                 self.print_direct_reference(direct_ref, outer_ref)
@@ -224,10 +225,10 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints a direct reference.
     fn print_direct_reference(
         &self,
-        direct_ref: &::substrait::proto::expression::ReferenceSegment,
-        outer_ref: Option<&::substrait::proto::expression::field_reference::OuterReference>,
+        direct_ref: &::substrait::expression::ReferenceSegment,
+        outer_ref: Option<&::substrait::expression::field_reference::OuterReference>,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::reference_segment::ReferenceType;
+        use ::substrait::expression::reference_segment::ReferenceType;
 
         match &direct_ref.reference_type {
             Some(ReferenceType::StructField(struct_field)) => {
@@ -250,7 +251,7 @@ impl<'a> ExpressionPrinter<'a> {
     fn lookup_field_reference(
         &self,
         field_index: usize,
-        outer_ref: Option<&::substrait::proto::expression::field_reference::OuterReference>,
+        outer_ref: Option<&::substrait::expression::field_reference::OuterReference>,
     ) -> Result<String, TextPlanError> {
         // Handle outer references by looking up the parent scope
         let parent_scope_arc: Option<Arc<SymbolInfo>>;
@@ -406,7 +407,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints a scalar function call.
     fn print_scalar_function(
         &mut self,
-        func: &::substrait::proto::expression::ScalarFunction,
+        func: &::substrait::expression::ScalarFunction,
     ) -> Result<String, TextPlanError> {
         self.function_depth += 1;
         let result = self.print_scalar_function_impl(func);
@@ -417,7 +418,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Implementation of scalar function printing.
     fn print_scalar_function_impl(
         &mut self,
-        func: &::substrait::proto::expression::ScalarFunction,
+        func: &::substrait::expression::ScalarFunction,
     ) -> Result<String, TextPlanError> {
         let mut result = String::new();
 
@@ -431,7 +432,7 @@ impl<'a> ExpressionPrinter<'a> {
 
         // Print arguments (newer protobuf style)
         for arg in &func.arguments {
-            use ::substrait::proto::function_argument::ArgType;
+            use ::substrait::function_argument::ArgType;
             let arg_str = match &arg.arg_type {
                 Some(ArgType::Enum(enum_val)) => {
                     format!("{}_enum", enum_val)
@@ -474,7 +475,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints an aggregate function.
     pub fn print_aggregate_function(
         &mut self,
-        func: &::substrait::proto::AggregateFunction,
+        func: &::substrait::AggregateFunction,
     ) -> Result<String, TextPlanError> {
         self.function_depth += 1;
         let result = self.print_aggregate_function_impl(func);
@@ -485,7 +486,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Implementation of aggregate function printing.
     fn print_aggregate_function_impl(
         &mut self,
-        func: &::substrait::proto::AggregateFunction,
+        func: &::substrait::AggregateFunction,
     ) -> Result<String, TextPlanError> {
         let mut result = String::new();
 
@@ -499,7 +500,7 @@ impl<'a> ExpressionPrinter<'a> {
 
         // Print arguments (newer protobuf style)
         for arg in &func.arguments {
-            use ::substrait::proto::function_argument::ArgType;
+            use ::substrait::function_argument::ArgType;
             let arg_str = match &arg.arg_type {
                 Some(ArgType::Enum(enum_val)) => {
                     format!("{}_enum", enum_val)
@@ -562,81 +563,79 @@ impl<'a> ExpressionPrinter<'a> {
     }
 
     /// Prints a type annotation.
-    pub fn print_type(&self, type_val: &::substrait::proto::Type) -> Result<String, TextPlanError> {
-        use ::substrait::proto::r#type::Kind;
+    pub fn print_type(&self, type_val: &::substrait::Type) -> Result<String, TextPlanError> {
+        use ::substrait::r#type::Kind;
 
         let mut result = String::new();
 
         let (base_type, nullable) = match &type_val.kind {
             Some(Kind::Bool(bool_type)) => (
                 "bool",
-                bool_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                bool_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::I8(i8_type)) => (
                 "i8",
-                i8_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                i8_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::I16(i16_type)) => (
                 "i16",
-                i16_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                i16_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::I32(i32_type)) => (
                 "i32",
-                i32_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                i32_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::I64(i64_type)) => (
                 "i64",
-                i64_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                i64_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Fp32(fp32_type)) => (
                 "fp32",
-                fp32_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                fp32_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Fp64(fp64_type)) => (
                 "fp64",
-                fp64_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                fp64_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::String(string_type)) => (
                 "string",
-                string_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                string_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Binary(binary_type)) => (
                 "binary",
-                binary_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                binary_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Timestamp(ts_type)) => (
                 "timestamp",
-                ts_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                ts_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Date(date_type)) => (
                 "date",
-                date_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                date_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Time(time_type)) => (
                 "time",
-                time_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                time_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::IntervalYear(interval_type)) => (
                 "interval_year",
-                interval_type.nullability
-                    == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                interval_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::IntervalDay(interval_type)) => (
                 "interval_day",
-                interval_type.nullability
-                    == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                interval_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::TimestampTz(ts_type)) => (
                 "timestamp_tz",
-                ts_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                ts_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::Uuid(uuid_type)) => (
                 "uuid",
-                uuid_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32,
+                uuid_type.nullability == ::substrait::r#type::Nullability::Nullable as i32,
             ),
             Some(Kind::FixedChar(fc_type)) => {
                 result.push_str("fixedchar");
-                if fc_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32 {
+                if fc_type.nullability == ::substrait::r#type::Nullability::Nullable as i32 {
                     result.push('?');
                 }
                 result.push_str(&format!("<{}>", fc_type.length));
@@ -644,7 +643,7 @@ impl<'a> ExpressionPrinter<'a> {
             }
             Some(Kind::Varchar(vc_type)) => {
                 result.push_str("varchar");
-                if vc_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32 {
+                if vc_type.nullability == ::substrait::r#type::Nullability::Nullable as i32 {
                     result.push('?');
                 }
                 result.push_str(&format!("<{}>", vc_type.length));
@@ -652,7 +651,7 @@ impl<'a> ExpressionPrinter<'a> {
             }
             Some(Kind::FixedBinary(fb_type)) => {
                 result.push_str("fixedbinary");
-                if fb_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32 {
+                if fb_type.nullability == ::substrait::r#type::Nullability::Nullable as i32 {
                     result.push('?');
                 }
                 result.push_str(&format!("<{}>", fb_type.length));
@@ -660,8 +659,7 @@ impl<'a> ExpressionPrinter<'a> {
             }
             Some(Kind::Decimal(dec_type)) => {
                 result.push_str("decimal");
-                if dec_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32
-                {
+                if dec_type.nullability == ::substrait::r#type::Nullability::Nullable as i32 {
                     result.push('?');
                 }
                 result.push_str(&format!("<{},{}>", dec_type.precision, dec_type.scale));
@@ -708,7 +706,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints an if-then expression.
     fn print_if_then(
         &mut self,
-        if_then: &::substrait::proto::expression::IfThen,
+        if_then: &::substrait::expression::IfThen,
     ) -> Result<String, TextPlanError> {
         let mut result = String::from("IFTHEN(");
 
@@ -748,7 +746,7 @@ impl<'a> ExpressionPrinter<'a> {
     /// Prints a cast expression.
     fn print_cast(
         &mut self,
-        cast: &::substrait::proto::expression::Cast,
+        cast: &::substrait::expression::Cast,
     ) -> Result<String, TextPlanError> {
         let mut result = String::new();
 
@@ -771,9 +769,9 @@ impl<'a> ExpressionPrinter<'a> {
 
     fn print_subquery(
         &mut self,
-        subquery: &::substrait::proto::expression::Subquery,
+        subquery: &::substrait::expression::Subquery,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::subquery::SubqueryType;
+        use ::substrait::expression::subquery::SubqueryType;
 
         match &subquery.subquery_type {
             Some(SubqueryType::SetComparison(set_comp)) => {
@@ -792,7 +790,7 @@ impl<'a> ExpressionPrinter<'a> {
 
     fn print_scalar_subquery(
         &mut self,
-        scalar: &::substrait::proto::expression::subquery::Scalar,
+        scalar: &::substrait::expression::subquery::Scalar,
     ) -> Result<String, TextPlanError> {
         let mut result = String::new();
 
@@ -843,7 +841,7 @@ impl<'a> ExpressionPrinter<'a> {
 
     fn print_in_predicate_subquery(
         &mut self,
-        in_pred: &::substrait::proto::expression::subquery::InPredicate,
+        in_pred: &::substrait::expression::subquery::InPredicate,
     ) -> Result<String, TextPlanError> {
         let mut result = String::new();
 
@@ -903,9 +901,9 @@ impl<'a> ExpressionPrinter<'a> {
 
     fn print_set_predicate_subquery(
         &mut self,
-        set_pred: &::substrait::proto::expression::subquery::SetPredicate,
+        set_pred: &::substrait::expression::subquery::SetPredicate,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::subquery::set_predicate::PredicateOp;
+        use ::substrait::expression::subquery::set_predicate::PredicateOp;
 
         let mut result = String::new();
 
@@ -974,9 +972,9 @@ impl<'a> ExpressionPrinter<'a> {
 
     fn print_set_comparison_subquery(
         &mut self,
-        set_comp: &::substrait::proto::expression::subquery::SetComparison,
+        set_comp: &::substrait::expression::subquery::SetComparison,
     ) -> Result<String, TextPlanError> {
-        use ::substrait::proto::expression::subquery::set_comparison::{ComparisonOp, ReductionOp};
+        use ::substrait::expression::subquery::set_comparison::{ComparisonOp, ReductionOp};
 
         let mut result = String::new();
 

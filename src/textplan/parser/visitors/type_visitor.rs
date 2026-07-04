@@ -13,12 +13,12 @@ use crate::textplan::parser::antlr::substraitplanparser::*;
 use crate::textplan::parser::antlr::substraitplanparservisitor::SubstraitPlanParserVisitor;
 use crate::textplan::parser::error_listener::ErrorListener;
 use crate::textplan::symbol_table::SymbolTable;
-use ::substrait::proto::r#type::{
+use ::substrait::r#type::{
     Binary, Boolean, Date, Decimal, FixedBinary, FixedChar, Fp32, Fp64, IntervalDay, IntervalYear,
     Kind, List, Map, Nullability, String as StringType, Struct, Time, Timestamp, TimestampTz, Uuid,
     VarChar, I16, I32, I64, I8,
 };
-use ::substrait::proto::Type;
+use ::substrait::Type;
 
 use super::{token_to_location, BasePlanVisitor, PlanVisitor};
 

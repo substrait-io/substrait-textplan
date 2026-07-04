@@ -38,7 +38,7 @@ pub fn save_to_text(bytes: &[u8]) -> Result<String, TextPlanError> {
 /// # Returns
 ///
 /// The textplan representation of the plan.
-fn convert_plan_to_text(plan: &substrait::proto::Plan) -> Result<String, TextPlanError> {
+fn convert_plan_to_text(plan: &substrait::Plan) -> Result<String, TextPlanError> {
     // Start building the textplan string
     let mut textplan = String::new();
 
@@ -69,7 +69,7 @@ fn convert_plan_to_text(plan: &substrait::proto::Plan) -> Result<String, TextPla
         for ext in &plan.extensions {
             // Use the correct mapping_type oneof field
             if let Some(mapping_type) = &ext.mapping_type {
-                use ::substrait::proto::extensions::simple_extension_declaration::MappingType;
+                use ::substrait::extensions::simple_extension_declaration::MappingType;
                 match mapping_type {
                     MappingType::ExtensionFunction(func) => {
                         textplan.push_str(&format!(
@@ -113,7 +113,7 @@ fn convert_plan_to_text(plan: &substrait::proto::Plan) -> Result<String, TextPla
 /// # Returns
 ///
 /// The textplan body generated from the symbol table
-pub fn process_plan_with_visitor(plan: &substrait::proto::Plan) -> Result<String, TextPlanError> {
+pub fn process_plan_with_visitor(plan: &substrait::Plan) -> Result<String, TextPlanError> {
     // Create a symbol table for the plan
     let symbol_table = SymbolTable::new();
 
@@ -271,8 +271,8 @@ fn walk_and_set_pipeline_start(terminus: &Arc<SymbolInfo>) -> Result<(), TextPla
 }
 
 /// Checks if a Rel contains any subquery expressions.
-fn has_subquery_expression(rel: &substrait::proto::Rel) -> bool {
-    use substrait::proto::rel::RelType;
+fn has_subquery_expression(rel: &substrait::Rel) -> bool {
+    use substrait::rel::RelType;
 
     match &rel.rel_type {
         Some(RelType::Filter(filter_rel)) => {
@@ -299,15 +299,13 @@ fn has_subquery_expression(rel: &substrait::proto::Rel) -> bool {
 }
 
 /// Checks if an Expression contains a subquery.
-fn has_subquery_in_expression(expr: &substrait::proto::Expression) -> bool {
-    use substrait::proto::expression::RexType;
+fn has_subquery_in_expression(expr: &substrait::Expression) -> bool {
+    use substrait::expression::RexType;
 
     match &expr.rex_type {
         Some(RexType::Subquery(_)) => true,
         Some(RexType::ScalarFunction(func)) => func.arguments.iter().any(|arg| {
-            if let Some(substrait::proto::function_argument::ArgType::Value(inner_expr)) =
-                &arg.arg_type
-            {
+            if let Some(substrait::function_argument::ArgType::Value(inner_expr)) = &arg.arg_type {
                 has_subquery_in_expression(inner_expr)
             } else {
                 false
@@ -367,9 +365,9 @@ fn extract_and_add_subquery_pipelines(
 fn extract_subquery_starts(
     symbol_table: &SymbolTable,
     parent_symbol: &Arc<SymbolInfo>,
-    rel: &substrait::proto::Rel,
+    rel: &substrait::Rel,
 ) -> Result<Vec<Arc<SymbolInfo>>, TextPlanError> {
-    use substrait::proto::rel::RelType;
+    use substrait::rel::RelType;
 
     let mut starts = Vec::new();
 
@@ -411,9 +409,9 @@ fn extract_subquery_starts(
 fn extract_subquery_starts_from_expression(
     symbol_table: &SymbolTable,
     parent_symbol: &Arc<SymbolInfo>,
-    expr: &substrait::proto::Expression,
+    expr: &substrait::Expression,
 ) -> Result<Vec<Arc<SymbolInfo>>, TextPlanError> {
-    use substrait::proto::expression::{subquery::SubqueryType, RexType};
+    use substrait::expression::{subquery::SubqueryType, RexType};
 
     let mut starts = Vec::new();
 
@@ -421,7 +419,7 @@ fn extract_subquery_starts_from_expression(
         Some(RexType::Subquery(subquery)) => {
             // Extract the subquery relation based on its type (but we don't actually need the Rel)
             // The subquery symbols were already registered by InitialPlanVisitor with parent_query_location
-            let _subquery_rel: Option<&substrait::proto::Rel> = match &subquery.subquery_type {
+            let _subquery_rel: Option<&substrait::Rel> = match &subquery.subquery_type {
                 Some(SubqueryType::Scalar(scalar)) => scalar.input.as_deref(),
                 Some(SubqueryType::InPredicate(in_pred)) => in_pred.haystack.as_deref(),
                 Some(SubqueryType::SetPredicate(set_pred)) => set_pred.tuples.as_deref(),
@@ -447,7 +445,7 @@ fn extract_subquery_starts_from_expression(
         Some(RexType::ScalarFunction(func)) => {
             // Recursively check arguments
             for arg in &func.arguments {
-                if let Some(substrait::proto::function_argument::ArgType::Value(inner_expr)) =
+                if let Some(substrait::function_argument::ArgType::Value(inner_expr)) =
                     &arg.arg_type
                 {
                     starts.extend(extract_subquery_starts_from_expression(

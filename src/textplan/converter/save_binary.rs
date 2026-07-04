@@ -6,7 +6,7 @@ use crate::proto::{save_plan_to_binary, Plan, PlanRel};
 use crate::textplan::common::error::TextPlanError;
 use crate::textplan::common::structured_symbol_data::RelationData;
 use crate::textplan::symbol_table::{SymbolInfo, SymbolTable, SymbolType};
-use ::substrait::proto::{plan_rel, rel, Rel, RelRoot};
+use ::substrait::{plan_rel, rel, Rel, RelRoot};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -25,7 +25,7 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
 
     // Create a plan with the appropriate version
     let mut plan = Plan {
-        version: Some(::substrait::proto::Version {
+        version: Some(::substrait::Version {
             major_number: 0,
             minor_number: 1,
             patch_number: 0,
@@ -39,6 +39,7 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
         advanced_extensions: None,
         parameter_bindings: Vec::new(),
         type_aliases: Vec::new(),
+        execution_behavior: None,
     };
 
     // Build extension_urns and extensions from symbol table
@@ -80,7 +81,7 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
     // Build extension_urns vector from collected extension spaces
     for (anchor, urn) in extension_spaces.iter() {
         plan.extension_urns
-            .push(::substrait::proto::extensions::SimpleExtensionUrn {
+            .push(::substrait::extensions::SimpleExtensionUrn {
                 extension_urn_anchor: *anchor,
                 urn: urn.clone(),
             });
@@ -88,10 +89,10 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
 
     // Build extensions vector from collected functions
     for (name, extension_urn_ref, function_anchor) in functions {
-        plan.extensions.push(::substrait::proto::extensions::SimpleExtensionDeclaration {
+        plan.extensions.push(::substrait::extensions::SimpleExtensionDeclaration {
             mapping_type: Some(
-                ::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(
-                    ::substrait::proto::extensions::simple_extension_declaration::ExtensionFunction {
+                ::substrait::extensions::simple_extension_declaration::MappingType::ExtensionFunction(
+                    ::substrait::extensions::simple_extension_declaration::ExtensionFunction {
                         extension_urn_reference: extension_urn_ref.unwrap_or(0),
                         function_anchor,
                         name,
@@ -245,7 +246,7 @@ fn populate_read_rel(
     source_symbol: &Option<Arc<SymbolInfo>>,
     schema_symbol: &Option<Arc<SymbolInfo>>,
     schema_name: &Option<String>,
-    read_rel: &mut ::substrait::proto::ReadRel,
+    read_rel: &mut ::substrait::ReadRel,
 ) -> Result<(), TextPlanError> {
     // Try to resolve schema symbol by name if not already resolved
     let resolved_schema = if schema_symbol.is_none() && schema_name.is_some() {
@@ -278,41 +279,42 @@ fn populate_read_rel(
                         let field_type = if let Some(blob_lock) = &symbol.blob {
                             if let Ok(blob_data) = blob_lock.lock() {
                                 if let Some(proto_type) =
-                                    blob_data.downcast_ref::<::substrait::proto::Type>()
+                                    blob_data.downcast_ref::<::substrait::Type>()
                                 {
                                     proto_type.clone()
                                 } else {
                                     // Fallback to i64 if blob doesn't contain Type
-                                    ::substrait::proto::Type {
-                                        kind: Some(::substrait::proto::r#type::Kind::I64(
-                                            ::substrait::proto::r#type::I64 {
+                                    ::substrait::Type {
+                                        kind: Some(::substrait::r#type::Kind::I64(
+                                            ::substrait::r#type::I64 {
                                                 type_variation_reference: 0,
-                                                nullability: ::substrait::proto::r#type::Nullability::Required as i32,
+                                                nullability:
+                                                    ::substrait::r#type::Nullability::Required
+                                                        as i32,
                                             },
                                         )),
                                     }
                                 }
                             } else {
                                 // Fallback to i64 if lock fails
-                                ::substrait::proto::Type {
-                                    kind: Some(::substrait::proto::r#type::Kind::I64(
-                                        ::substrait::proto::r#type::I64 {
+                                ::substrait::Type {
+                                    kind: Some(::substrait::r#type::Kind::I64(
+                                        ::substrait::r#type::I64 {
                                             type_variation_reference: 0,
-                                            nullability:
-                                                ::substrait::proto::r#type::Nullability::Required
-                                                    as i32,
+                                            nullability: ::substrait::r#type::Nullability::Required
+                                                as i32,
                                         },
                                     )),
                                 }
                             }
                         } else {
                             // Fallback to i64 if no blob
-                            ::substrait::proto::Type {
-                                kind: Some(::substrait::proto::r#type::Kind::I64(
-                                    ::substrait::proto::r#type::I64 {
+                            ::substrait::Type {
+                                kind: Some(::substrait::r#type::Kind::I64(
+                                    ::substrait::r#type::I64 {
                                         type_variation_reference: 0,
-                                        nullability:
-                                            ::substrait::proto::r#type::Nullability::Required as i32,
+                                        nullability: ::substrait::r#type::Nullability::Required
+                                            as i32,
                                     },
                                 )),
                             }
@@ -325,12 +327,12 @@ fn populate_read_rel(
 
         // Build NamedStruct
         if !field_names.is_empty() {
-            read_rel.base_schema = Some(::substrait::proto::NamedStruct {
+            read_rel.base_schema = Some(::substrait::NamedStruct {
                 names: field_names.clone(),
-                r#struct: Some(::substrait::proto::r#type::Struct {
+                r#struct: Some(::substrait::r#type::Struct {
                     types: field_types,
                     type_variation_reference: 0,
-                    nullability: ::substrait::proto::r#type::Nullability::Required as i32,
+                    nullability: ::substrait::r#type::Nullability::Required as i32,
                 }),
             });
             println!(
@@ -370,8 +372,8 @@ fn populate_read_rel(
             table_names.push(source_sym.name().to_string());
         }
 
-        read_rel.read_type = Some(::substrait::proto::read_rel::ReadType::NamedTable(
-            ::substrait::proto::read_rel::NamedTable {
+        read_rel.read_type = Some(::substrait::read_rel::ReadType::NamedTable(
+            ::substrait::read_rel::NamedTable {
                 names: table_names.clone(),
                 advanced_extension: None,
             },
@@ -384,9 +386,9 @@ fn populate_read_rel(
     }
 
     // Set common to direct emission (no projection)
-    read_rel.common = Some(::substrait::proto::RelCommon {
-        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-            ::substrait::proto::rel_common::Direct {},
+    read_rel.common = Some(::substrait::RelCommon {
+        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+            ::substrait::rel_common::Direct {},
         )),
         ..Default::default()
     });
@@ -397,7 +399,7 @@ fn populate_read_rel(
 /// Populates a ProjectRel's emit output mappings from symbol table references.
 fn populate_project_emit(
     symbol: &Arc<SymbolInfo>,
-    project_rel: &mut ::substrait::proto::ProjectRel,
+    project_rel: &mut ::substrait::ProjectRel,
 ) -> Result<(), TextPlanError> {
     // Get relation data to check for output field references (emits)
     if let Some(blob_lock) = &symbol.blob {
@@ -450,17 +452,17 @@ fn populate_project_emit(
                     );
 
                     // Set the RelCommon with emit mapping
-                    project_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Emit(
-                            ::substrait::proto::rel_common::Emit { output_mapping },
+                    project_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Emit(
+                            ::substrait::rel_common::Emit { output_mapping },
                         )),
                         ..Default::default()
                     });
                 } else {
                     // No emits, use direct emission
-                    project_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    project_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -474,12 +476,12 @@ fn populate_project_emit(
 
 /// Counts the output fields from a relation.
 /// This is a simplified version that needs proper implementation.
-fn count_relation_output_fields(rel: &::substrait::proto::Rel) -> usize {
+fn count_relation_output_fields(rel: &::substrait::Rel) -> usize {
     // TODO: Implement proper field counting based on relation type
     // For now, return a placeholder
     if let Some(rel_type) = &rel.rel_type {
         match rel_type {
-            ::substrait::proto::rel::RelType::Read(read_rel) => {
+            ::substrait::rel::RelType::Read(read_rel) => {
                 // Count fields from base_schema
                 if let Some(base_schema) = &read_rel.base_schema {
                     base_schema.names.len()
@@ -487,7 +489,7 @@ fn count_relation_output_fields(rel: &::substrait::proto::Rel) -> usize {
                     0
                 }
             }
-            ::substrait::proto::rel::RelType::Cross(cross_rel) => {
+            ::substrait::rel::RelType::Cross(cross_rel) => {
                 // Cross product combines left and right fields
                 let left_count = if let Some(left) = &cross_rel.left {
                     count_relation_output_fields(left)
@@ -501,7 +503,7 @@ fn count_relation_output_fields(rel: &::substrait::proto::Rel) -> usize {
                 };
                 left_count + right_count
             }
-            ::substrait::proto::rel::RelType::Filter(filter_rel) => {
+            ::substrait::rel::RelType::Filter(filter_rel) => {
                 // Filter passes through all input fields from its input
                 if let Some(input) = &filter_rel.input {
                     count_relation_output_fields(input)
@@ -509,16 +511,16 @@ fn count_relation_output_fields(rel: &::substrait::proto::Rel) -> usize {
                     0
                 }
             }
-            ::substrait::proto::rel::RelType::Project(proj) => {
+            ::substrait::rel::RelType::Project(proj) => {
                 // Project outputs based on emit mapping or expressions
                 if let Some(common) = &proj.common {
                     if let Some(emit_kind) = &common.emit_kind {
                         match emit_kind {
-                            ::substrait::proto::rel_common::EmitKind::Emit(emit) => {
+                            ::substrait::rel_common::EmitKind::Emit(emit) => {
                                 // Emit specifies exactly which fields to output
                                 emit.output_mapping.len()
                             }
-                            ::substrait::proto::rel_common::EmitKind::Direct(_) => {
+                            ::substrait::rel_common::EmitKind::Direct(_) => {
                                 // Direct emission outputs all input fields plus all expressions
                                 let input_count = if let Some(input) = &proj.input {
                                     count_relation_output_fields(input)
@@ -547,7 +549,7 @@ fn count_relation_output_fields(rel: &::substrait::proto::Rel) -> usize {
                     input_count + proj.expressions.len()
                 }
             }
-            ::substrait::proto::rel::RelType::Aggregate(agg) => {
+            ::substrait::rel::RelType::Aggregate(agg) => {
                 // Aggregate outputs grouping keys + measures
                 #[allow(deprecated)]
                 let grouping_count = agg
@@ -708,9 +710,9 @@ fn add_inputs_to_relation(
 
                 // Set common to direct emission (filters pass through all fields)
                 if filter_rel.common.is_none() {
-                    filter_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    filter_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -797,16 +799,14 @@ fn add_inputs_to_relation(
                 for (i, measure) in agg_rel.measures.iter().enumerate() {
                     if let Some(agg_func) = &measure.measure {
                         for (j, arg) in agg_func.arguments.iter().enumerate() {
-                            if let Some(::substrait::proto::function_argument::ArgType::Value(
-                                expr,
-                            )) = &arg.arg_type
+                            if let Some(::substrait::function_argument::ArgType::Value(expr)) =
+                                &arg.arg_type
                             {
-                                if let Some(::substrait::proto::expression::RexType::Selection(
-                                    sel,
-                                )) = &expr.rex_type
+                                if let Some(::substrait::expression::RexType::Selection(sel)) =
+                                    &expr.rex_type
                                 {
-                                    if let Some(::substrait::proto::expression::field_reference::ReferenceType::DirectReference(dir_ref)) = &sel.reference_type {
-                                        if let Some(::substrait::proto::expression::reference_segment::ReferenceType::StructField(struct_field)) = &dir_ref.reference_type {
+                                    if let Some(::substrait::expression::field_reference::ReferenceType::DirectReference(dir_ref)) = &sel.reference_type {
+                                        if let Some(::substrait::expression::reference_segment::ReferenceType::StructField(struct_field)) = &dir_ref.reference_type {
                                             println!("      Measure {} arg {} field index: {}", i, j, struct_field.field);
                                         }
                                     }
@@ -818,9 +818,9 @@ fn add_inputs_to_relation(
 
                 // Set common to direct emission (aggregates pass through grouping fields)
                 if agg_rel.common.is_none() {
-                    agg_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    agg_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -838,9 +838,9 @@ fn add_inputs_to_relation(
             rel::RelType::Sort(sort_rel) => {
                 // Set common to direct emission (sorts pass through all fields)
                 if sort_rel.common.is_none() {
-                    sort_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    sort_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -860,9 +860,9 @@ fn add_inputs_to_relation(
 
                 // Set common to direct emission (fetch passes through all fields)
                 if fetch_rel.common.is_none() {
-                    fetch_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    fetch_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -898,9 +898,9 @@ fn add_inputs_to_relation(
 
                 // Set common to direct emission
                 if set_rel.common.is_none() {
-                    set_rel.common = Some(::substrait::proto::RelCommon {
-                        emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                            ::substrait::proto::rel_common::Direct {},
+                    set_rel.common = Some(::substrait::RelCommon {
+                        emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                            ::substrait::rel_common::Direct {},
                         )),
                         ..Default::default()
                     });
@@ -1207,7 +1207,7 @@ fn populate_subquery_in_rel_impl(
     subquery_pipelines: &[Arc<SymbolInfo>],
     consumed_index: &mut usize,
 ) -> Result<(), TextPlanError> {
-    use substrait::proto::rel::RelType;
+    use substrait::rel::RelType;
 
     let rel_type_name = match &rel.rel_type {
         Some(RelType::Filter(_)) => "Filter",
@@ -1364,12 +1364,12 @@ fn populate_subquery_in_rel_impl(
 
 /// Populates subquery relations in an expression.
 fn populate_subquery_in_expression(
-    expr: &mut substrait::proto::Expression,
+    expr: &mut substrait::Expression,
     symbol_table: &SymbolTable,
     subquery_pipelines: &[Arc<SymbolInfo>],
     consumed_index: &mut usize,
 ) -> Result<(), TextPlanError> {
-    use substrait::proto::expression::{subquery::SubqueryType, RexType};
+    use substrait::expression::{subquery::SubqueryType, RexType};
 
     let rex_type_name = match &expr.rex_type {
         Some(RexType::Subquery(_)) => "Subquery",
@@ -1648,7 +1648,7 @@ fn populate_subquery_in_expression(
         Some(RexType::ScalarFunction(func)) => {
             // Recursively handle function arguments
             for arg in &mut func.arguments {
-                if let Some(substrait::proto::function_argument::ArgType::Value(inner_expr)) =
+                if let Some(substrait::function_argument::ArgType::Value(inner_expr)) =
                     &mut arg.arg_type
                 {
                     populate_subquery_in_expression(

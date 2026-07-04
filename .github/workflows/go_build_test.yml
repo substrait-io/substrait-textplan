@@ -37,12 +37,12 @@ jobs:
         go-version: ['1.19', '1.20']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
 
@@ -59,7 +59,7 @@ jobs:
 
     - name: Cache ANTLR JAR
       id: cache-antlr
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
         key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}

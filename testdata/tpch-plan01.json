@@ -1,60 +1,60 @@
 # select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price, sum(l_extendedprice smoke.sh tpch_smoke.sh (1 - l_discount)) as sum_disc_price, sum(l_extendedprice smoke.sh tpch_smoke.sh (1 - l_discount) smoke.sh tpch_smoke.sh (1 + l_tax)) as sum_charge, avg(l_quantity) as avg_qty, avg(l_extendedprice) as avg_price, avg(l_discount) as avg_disc, count(*) as count_order from lineitem where l_shipdate <= date '1998-12-01' - interval '120' day (3) group by l_returnflag, l_linestatus order by l_returnflag, l_linestatus
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 3,
-    "uri": "/functions_aggregate_generic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_aggregate_generic"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_arithmetic_decimal.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_arithmetic_decimal"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_datetime.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_datetime"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "lte:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 1,
       "name": "subtract:date_day"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "multiply:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 3,
       "name": "subtract:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 4,
       "name": "add:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 5,
       "name": "sum:dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 6,
       "name": "avg:dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 7,
       "name": "count:any"
     }

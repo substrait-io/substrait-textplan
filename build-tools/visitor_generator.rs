@@ -304,6 +304,12 @@ pub trait Traversable {
             "substrait.Expression.Literal.Struct" => "expression_literal_struct",
             "substrait.Expression.Literal.VarChar" => "expression_literal_varchar",
             "substrait.Expression.Literal.UserDefined" => "expression_literal_user_defined",
+            "substrait.Expression.Literal.PrecisionTimestamp" => "expression_literal_precision_timestamp",
+            "substrait.Expression.Literal.PrecisionTime" => "expression_literal_precision_time",
+            "substrait.Expression.Literal.IntervalCompound" => "expression_literal_interval_compound",
+            // Disambiguate the read-relation NamedTable from the top-level NamedTable
+            // message added in newer Substrait releases; both share the leaf name.
+            "substrait.ReadRel.NamedTable" => "read_rel_named_table",
             "substrait.Expression.Subquery.Scalar" => "expression_subquery_scalar",
             "substrait.Expression.MaskExpression.MapSelect.MapKey" => "mask_expression_map_select_mapkey",
             "substrait.Expression.MaskExpression.ListSelect.ListSelectItem.ListElement" => "mask_expression_list_select_item_element",

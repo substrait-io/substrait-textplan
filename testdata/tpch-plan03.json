@@ -1,57 +1,57 @@
 # select l.l_orderkey, sum(l.l_extendedprice smoke.sh tpch_smoke.sh (1 - l.l_discount)) as revenue, o.o_orderdate, o.o_shippriority from "customer" c, "orders" o, "lineitem" l where c.c_mktsegment = 'HOUSEHOLD' and c.c_custkey = o.o_custkey and l.l_orderkey = o.o_orderkey and o.o_orderdate < date '1995-03-25' and l.l_shipdate > date '1995-03-25' group by l.l_orderkey, o.o_orderdate, o.o_shippriority order by revenue desc, o.o_orderdate limit 10
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 4,
-    "uri": "/functions_arithmetic_decimal.yaml"
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_arithmetic_decimal"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_datetime.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_datetime"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 1,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 2,
       "name": "lt:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 3,
       "name": "gt:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 4,
       "name": "multiply:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 5,
       "name": "subtract:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 6,
       "name": "sum:dec"
     }

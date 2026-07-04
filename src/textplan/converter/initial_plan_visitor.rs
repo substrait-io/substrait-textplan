@@ -689,17 +689,17 @@ impl PlanProtoVisitor for InitialPlanVisitor {
         self.internal_location = location;
     }
 
-    fn post_process_simple_extension_uri(
+    fn post_process_simple_extension_urn(
         &mut self,
-        obj: &substrait::extensions::SimpleExtensionUri,
+        obj: &substrait::extensions::SimpleExtensionUrn,
     ) {
         self.symbol_table.define_symbol(
-            obj.uri.clone(),
-            self.current_location().field("uri"),
+            obj.urn.clone(),
+            self.current_location().field("urn"),
             SymbolType::ExtensionSpace,
             /* subtype */ None,
             Some(Arc::new(Mutex::new(ExtensionSpaceData::new(
-                obj.extension_uri_anchor,
+                obj.extension_urn_anchor,
             ))) as Arc<Mutex<dyn Any + Send + Sync>>),
         );
     }
@@ -719,7 +719,7 @@ impl PlanProtoVisitor for InitialPlanVisitor {
                                                     /* subtype */ None,
                                                     Some(Arc::new(Mutex::new(FunctionData::new(
                                                         ef.name.clone(),
-                                                        Some(ef.extension_uri_reference),
+                                                        Some(ef.extension_urn_reference),
                                                         ef.function_anchor),
                                                     )) as Arc<Mutex<dyn Any + Send + Sync>>)
                     );

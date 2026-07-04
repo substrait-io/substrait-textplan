@@ -1,72 +1,72 @@
 # select cntrycode, count(*) as numcust, sum(c_acctbal) as totacctbal from ( select substring(c_phone from 1 for 2) as cntrycode, c_acctbal from "customer" c where substring(c_phone from 1 for 2) in ('24', '31', '11', '16', '21', '20', '34') and c_acctbal > ( select avg(c_acctbal) from "customer" where c_acctbal > 0.00 and substring(c_phone from 1 for 2) in ('24', '31', '11', '16', '21', '20', '34') ) and not exists ( select smoke.sh tpch_smoke.sh from "orders" o where o.o_custkey = c.c_custkey ) ) as custsale group by cntrycode order by cntrycode
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 5,
-    "uri": "/functions_aggregate_generic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 5,
+    "urn": "extension:io.substrait:functions_aggregate_generic"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_string.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_string"
   }, {
-    "extensionUriAnchor": 4,
-    "uri": "/functions_arithmetic_decimal.yaml"
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_arithmetic_decimal"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 1,
       "name": "or:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 3,
       "name": "substring:fchar_i32_i32"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 4,
       "name": "gt:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 5,
       "name": "avg:dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 6,
       "name": "not:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 5,
+      "extensionUrnReference": 5,
       "functionAnchor": 7,
       "name": "count:any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 8,
       "name": "sum:dec"
     }

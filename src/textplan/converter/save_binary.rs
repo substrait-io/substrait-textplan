@@ -32,7 +32,6 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
             git_hash: String::new(),
             producer: "Substrait TextPlan Rust".to_string(),
         }),
-        extension_uris: Vec::new(),
         extension_urns: Vec::new(),
         extensions: Vec::new(),
         relations: Vec::new(),
@@ -42,8 +41,8 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
         type_aliases: Vec::new(),
     };
 
-    // Build extension_uris and extensions from symbol table
-    // Collect extension spaces (URIs) and functions
+    // Build extension_urns and extensions from symbol table
+    // Collect extension spaces (URNs) and functions
     let mut extension_spaces: HashMap<u32, String> = HashMap::new();
     let mut functions: Vec<(String, Option<u32>, u32)> = Vec::new();
 
@@ -61,13 +60,13 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
                 }
             }
             SymbolType::Function => {
-                // Extract function name, extension_uri_reference, and anchor
+                // Extract function name, extension_urn_reference, and anchor
                 if let Some(blob_lock) = &symbol.blob {
                     if let Ok(blob_data) = blob_lock.lock() {
                         if let Some(func_data) = blob_data.downcast_ref::<FunctionData>() {
                             functions.push((
                                 func_data.name.clone(),
-                                func_data.extension_uri_reference,
+                                func_data.extension_urn_reference,
                                 func_data.anchor,
                             ));
                         }
@@ -78,23 +77,22 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
         }
     }
 
-    // Build extension_uris vector from collected extension spaces
-    for (anchor, uri) in extension_spaces.iter() {
-        plan.extension_uris
-            .push(::substrait::proto::extensions::SimpleExtensionUri {
-                extension_uri_anchor: *anchor,
-                uri: uri.clone(),
+    // Build extension_urns vector from collected extension spaces
+    for (anchor, urn) in extension_spaces.iter() {
+        plan.extension_urns
+            .push(::substrait::proto::extensions::SimpleExtensionUrn {
+                extension_urn_anchor: *anchor,
+                urn: urn.clone(),
             });
     }
 
     // Build extensions vector from collected functions
-    for (name, extension_uri_ref, function_anchor) in functions {
+    for (name, extension_urn_ref, function_anchor) in functions {
         plan.extensions.push(::substrait::proto::extensions::SimpleExtensionDeclaration {
             mapping_type: Some(
                 ::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(
                     ::substrait::proto::extensions::simple_extension_declaration::ExtensionFunction {
-                        extension_uri_reference: extension_uri_ref.unwrap_or(0),
-                        extension_urn_reference: 0,  // Not used in textplan
+                        extension_urn_reference: extension_urn_ref.unwrap_or(0),
                         function_anchor,
                         name,
                     },
@@ -104,8 +102,8 @@ pub fn create_plan_from_symbol_table(symbol_table: &SymbolTable) -> Result<Plan,
     }
 
     println!(
-        "Built {} extension URIs and {} extensions",
-        plan.extension_uris.len(),
+        "Built {} extension URNs and {} extensions",
+        plan.extension_urns.len(),
         plan.extensions.len()
     );
 

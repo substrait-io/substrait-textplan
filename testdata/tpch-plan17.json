@@ -1,54 +1,54 @@
 # select sum(l.l_extendedprice) / 7.0 as avg_yearly from "lineitem" l, "part" p where p.p_partkey = l.l_partkey and p.p_brand = 'Brand#13' and p.p_container = 'JUMBO CAN' and l.l_quantity < ( select 0.2 smoke.sh tpch_smoke.sh avg(l2.l_quantity) from "lineitem" l2 where l2.l_partkey = p.p_partkey )
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_arithmetic_decimal.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_arithmetic_decimal"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 1,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "lt:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 3,
       "name": "avg:dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 4,
       "name": "multiply:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 5,
       "name": "sum:dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 6,
       "name": "divide:dec_dec"
     }

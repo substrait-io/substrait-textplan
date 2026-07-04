@@ -55,10 +55,10 @@ fn convert_plan_to_text(plan: &substrait::proto::Plan) -> Result<String, TextPla
     textplan.push('\n');
 
     // Add extension URIs if present
-    if !plan.extension_uris.is_empty() {
-        textplan.push_str("// Extension URIs:\n");
-        for uri in &plan.extension_uris {
-            textplan.push_str(&format!("// - {}: {}\n", uri.extension_uri_anchor, uri.uri));
+    if !plan.extension_urns.is_empty() {
+        textplan.push_str("// Extension URNs:\n");
+        for uri in &plan.extension_urns {
+            textplan.push_str(&format!("// - {}: {}\n", uri.extension_urn_anchor, uri.urn));
         }
         textplan.push('\n');
     }
@@ -73,20 +73,20 @@ fn convert_plan_to_text(plan: &substrait::proto::Plan) -> Result<String, TextPla
                 match mapping_type {
                     MappingType::ExtensionFunction(func) => {
                         textplan.push_str(&format!(
-                            "// - URI Ref: {}, Function: {}, Name: {}\n",
-                            func.extension_uri_reference, func.function_anchor, func.name
+                            "// - URN Ref: {}, Function: {}, Name: {}\n",
+                            func.extension_urn_reference, func.function_anchor, func.name
                         ));
                     }
                     MappingType::ExtensionType(typ) => {
                         textplan.push_str(&format!(
-                            "// - URI Ref: {}, Type: {}, Name: {}\n",
-                            typ.extension_uri_reference, typ.type_anchor, typ.name
+                            "// - URN Ref: {}, Type: {}, Name: {}\n",
+                            typ.extension_urn_reference, typ.type_anchor, typ.name
                         ));
                     }
                     MappingType::ExtensionTypeVariation(var) => {
                         textplan.push_str(&format!(
-                            "// - URI Ref: {}, Type Variation: {}, Name: {}\n",
-                            var.extension_uri_reference, var.type_variation_anchor, var.name
+                            "// - URN Ref: {}, Type Variation: {}, Name: {}\n",
+                            var.extension_urn_reference, var.type_variation_anchor, var.name
                         ));
                     }
                 }

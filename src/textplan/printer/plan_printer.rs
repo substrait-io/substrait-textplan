@@ -1306,7 +1306,7 @@ impl PlanPrinter {
                 if let Some(blob_lock) = &symbol.blob {
                     if let Ok(blob_data) = blob_lock.lock() {
                         if let Some(func_data) = blob_data.downcast_ref::<FunctionData>() {
-                            let uri_ref = func_data.extension_uri_reference;
+                            let uri_ref = func_data.extension_urn_reference;
                             functions_by_uri
                                 .entry(uri_ref)
                                 .or_default()

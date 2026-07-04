@@ -26,7 +26,7 @@ mod tests {
     }
 
     /// Normalize a plan for comparison, following C++ ReferenceNormalizer approach:
-    /// 1. Sort extension_uris by URI string and renumber anchors from 1
+    /// 1. Sort extension_urns by URI string and renumber anchors from 1
     /// 2. Sort extensions by (uri_reference, name) and renumber function_anchor from 0
     /// 3. Update all references throughout the plan
     fn normalize_plan(mut plan: ::substrait::proto::Plan) -> ::substrait::proto::Plan {
@@ -39,21 +39,21 @@ mod tests {
         let mut uri_mapping: HashMap<u32, u32> = HashMap::new();
 
         // Sort by URI string
-        plan.extension_uris.sort_by(|a, b| a.uri.cmp(&b.uri));
+        plan.extension_urns.sort_by(|a, b| a.urn.cmp(&b.urn));
 
         // Renumber from 1 and build mapping
-        for (new_anchor, uri) in plan.extension_uris.iter_mut().enumerate() {
-            let old_anchor = uri.extension_uri_anchor;
+        for (new_anchor, uri) in plan.extension_urns.iter_mut().enumerate() {
+            let old_anchor = uri.extension_urn_anchor;
             let new_anchor_val = (new_anchor + 1) as u32;
             uri_mapping.insert(old_anchor, new_anchor_val);
-            uri.extension_uri_anchor = new_anchor_val;
+            uri.extension_urn_anchor = new_anchor_val;
         }
 
         // Update function URI references
         for ext in plan.extensions.iter_mut() {
             if let Some(::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref mut f)) = ext.mapping_type {
-                if let Some(&new_ref) = uri_mapping.get(&f.extension_uri_reference) {
-                    f.extension_uri_reference = new_ref;
+                if let Some(&new_ref) = uri_mapping.get(&f.extension_urn_reference) {
+                    f.extension_urn_reference = new_ref;
                 }
             }
         }
@@ -75,7 +75,7 @@ mod tests {
             };
             match (a_func, b_func) {
                 (Some(af), Some(bf)) => {
-                    (af.extension_uri_reference, &af.name).cmp(&(bf.extension_uri_reference, &bf.name))
+                    (af.extension_urn_reference, &af.name).cmp(&(bf.extension_urn_reference, &bf.name))
                 }
                 _ => std::cmp::Ordering::Equal,
             }

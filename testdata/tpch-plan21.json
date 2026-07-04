@@ -1,51 +1,51 @@
 # select s.s_name, count(*) as numwait from "supplier" s, "lineitem" l1, "orders" o, "nation" n where s.s_suppkey = l1.l_suppkey and o.o_orderkey = l1.l_orderkey and o.o_orderstatus = 'F' and l1.l_receiptdate > l1.l_commitdate and exists ( select smoke.sh tpch_smoke.sh from "lineitem" l2 where l2.l_orderkey = l1.l_orderkey and l2.l_suppkey <> l1.l_suppkey ) and not exists ( select smoke.sh tpch_smoke.sh from "lineitem" l3 where l3.l_orderkey = l1.l_orderkey and l3.l_suppkey <> l1.l_suppkey and l3.l_receiptdate > l3.l_commitdate ) and s.s_nationkey = n.n_nationkey and n.n_name = 'BRAZIL' group by s.s_name order by numwait desc, s.s_name limit 100
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 4,
-    "uri": "/functions_aggregate_generic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_aggregate_generic"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_datetime.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_datetime"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 1,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 2,
       "name": "gt:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 3,
       "name": "not_equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 4,
       "name": "not:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 5,
       "name": "count:any"
     }

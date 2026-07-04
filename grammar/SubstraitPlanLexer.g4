@@ -123,15 +123,11 @@ SINGLE_LINE_COMMENT: '//' ~[\r\n]* (('\r'? '\n') | EOF) -> skip;
 SPACES: [ \u000B\t\r\n]+ -> skip;
 
 mode EXTENSIONS;
-fragment SCHEME: [A-Za-z]+ ;
-fragment HOSTNAME: [A-Za-z0-9-.]+ ;
-fragment FILENAME: [A-Za-z0-9-._]+;
-fragment PATH: FILENAME ( '/' FILENAME )*;
-
-URI
-    : SCHEME ':' ( '//' HOSTNAME '/' )? PATH
-    | '/'? PATH
-    ;
+// A URI or URN identifying an extension space. In EXTENSIONS mode the only
+// other tokens are '{' and whitespace, so match any run of characters up to
+// them. This accepts file paths (/functions_arithmetic.yaml), URLs, and
+// URNs (extension:io.substrait:functions_arithmetic) alike.
+URI: ~[ \t\r\n{]+ ;
 
 EXTENSIONS_LEFTBRACE: '{' -> mode(DEFAULT_MODE), type(LEFTBRACE);
 

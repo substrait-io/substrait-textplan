@@ -1,69 +1,69 @@
 # select sum(l.l_extendedprice* (1 - l.l_discount)) as revenue from "lineitem" l, "part" p where ( p.p_partkey = l.l_partkey and p.p_brand = 'Brand#41' and p.p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG') and l.l_quantity >= 2 and l.l_quantity <= 2 + 10 and p.p_size between 1 and 5 and l.l_shipmode in ('AIR', 'AIR REG') and l.l_shipinstruct = 'DELIVER IN PERSON' ) or ( p.p_partkey = l.l_partkey and p.p_brand = 'Brand#13' and p.p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK') and l.l_quantity >= 14 and l.l_quantity <= 14 + 10 and p.p_size between 1 and 10 and l.l_shipmode in ('AIR', 'AIR REG') and l.l_shipinstruct = 'DELIVER IN PERSON' ) or ( p.p_partkey = l.l_partkey and p.p_brand = 'Brand#55' and p.p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG') and l.l_quantity >= 23 and l.l_quantity <= 23 + 10 and p.p_size between 1 and 15 and l.l_shipmode in ('AIR', 'AIR REG') and l.l_shipinstruct = 'DELIVER IN PERSON' )
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 3,
-    "uri": "/functions_arithmetic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_arithmetic"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 4,
-    "uri": "/functions_arithmetic_decimal.yaml"
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_arithmetic_decimal"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "or:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 1,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 3,
       "name": "gte:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 4,
       "name": "lte:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 5,
       "name": "add:i32_i32"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 6,
       "name": "multiply:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 7,
       "name": "subtract:dec_dec"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 8,
       "name": "sum:dec"
     }

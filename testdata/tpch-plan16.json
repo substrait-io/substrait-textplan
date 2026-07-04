@@ -1,57 +1,57 @@
 # select p.p_brand, p.p_type, p.p_size, count(distinct ps.ps_suppkey) as supplier_cnt from "partsupp" ps, "part" p where p.p_partkey = ps.ps_partkey and p.p_brand <> 'Brand#21' and p.p_type not like 'MEDIUM PLATED%' and p.p_size in (38, 2, 8, 31, 44, 5, 14, 24) and ps.ps_suppkey not in ( select s.s_suppkey from "supplier" s where s.s_comment like '%Customer%Complaints%' ) group by p.p_brand, p.p_type, p.p_size order by supplier_cnt desc, p.p_brand, p.p_type, p.p_size
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 4,
-    "uri": "/functions_aggregate_generic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_aggregate_generic"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_string.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_string"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 1,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "not_equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 3,
       "name": "not:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 4,
       "name": "like:vchar_vchar"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 5,
       "name": "or:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 6,
       "name": "count:any"
     }

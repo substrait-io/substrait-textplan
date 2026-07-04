@@ -125,15 +125,15 @@ impl ExtensionSpaceData {
 #[derive(Debug, Clone)]
 pub struct FunctionData {
     pub name: String,
-    pub extension_uri_reference: Option<u32>,
+    pub extension_urn_reference: Option<u32>,
     pub anchor: u32,
 }
 
 impl FunctionData {
-    pub(crate) fn new(name: String, extension_uri_reference: Option<u32>, anchor: u32) -> Self {
+    pub(crate) fn new(name: String, extension_urn_reference: Option<u32>, anchor: u32) -> Self {
         FunctionData {
             name,
-            extension_uri_reference,
+            extension_urn_reference,
             anchor,
         }
     }

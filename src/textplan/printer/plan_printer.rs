@@ -177,20 +177,8 @@ impl PlanPrinter {
         // Get the indentation for this level
         let indent = " ".repeat(self.indent_size);
 
-        // Extract root names from the blob (stored as Vec<String>)
-        let names = if let Some(blob_lock) = &root.blob {
-            if let Ok(blob_data) = blob_lock.lock() {
-                if let Some(names_vec) = blob_data.downcast_ref::<Vec<String>>() {
-                    names_vec.clone()
-                } else {
-                    Vec::new()
-                }
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
+        // Root symbols carry their relation names as a Vec<String> in the blob.
+        let names = root.root_names();
 
         // Add the names of the root relations
         result.push_str(&format!("{}NAMES = [", indent));
@@ -1470,3 +1458,39 @@ impl PlanPrinter {
 // Note: Printer tests are covered by the roundtrip tests in converter_test.rs
 // which match the C++ test structure. Stand-alone printer unit tests are not
 // part of the C++ test suite.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::textplan::common::ProtoLocation;
+    use std::sync::Mutex;
+
+    /// A Root symbol stores its output names as a `Vec<String>` in the blob;
+    /// the printer must read them back and emit them in the `NAMES` list.
+    #[test]
+    fn root_names_are_printed_from_blob() {
+        let mut table = SymbolTable::default();
+        table.define_symbol(
+            "root".to_string(),
+            ProtoLocation::default(),
+            SymbolType::Root,
+            None,
+            Some(Arc::new(Mutex::new(vec![
+                "customer".to_string(),
+                "orders".to_string(),
+            ]))),
+        );
+
+        let mut printer = PlanPrinter::new(TextPlanFormat::Standard);
+        let output = printer.print_plan(&table).expect("print_plan failed");
+
+        assert!(
+            output.contains("ROOT {"),
+            "expected a ROOT block, got:\n{output}"
+        );
+        assert!(
+            output.contains("NAMES = [customer, orders]"),
+            "expected root NAMES read from the Vec<String> blob, got:\n{output}"
+        );
+    }
+}

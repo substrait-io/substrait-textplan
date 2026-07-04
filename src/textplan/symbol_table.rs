@@ -273,6 +273,16 @@ impl SymbolInfo {
             guard.downcast_mut::<T>().map(f)
         })
     }
+
+    /// Returns the output names carried by a `Root` symbol.
+    ///
+    /// Root symbols store their relation names as a `Vec<String>` in the blob;
+    /// this centralizes that type contract. Returns an empty vector for symbols
+    /// that carry no such payload.
+    pub fn root_names(&self) -> Vec<String> {
+        self.with_blob::<Vec<String>, _, _>(|names| names.clone())
+            .unwrap_or_default()
+    }
 }
 
 impl PartialEq for SymbolInfo {

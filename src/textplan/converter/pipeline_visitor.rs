@@ -11,7 +11,6 @@ use crate::textplan::common::ProtoLocation;
 use crate::textplan::converter::generated::base_plan_visitor::Traversable;
 use crate::textplan::converter::generated::PlanProtoVisitor;
 use crate::textplan::SymbolType;
-use ::substrait::proto as substrait;
 use std::sync::Arc;
 
 /// Pipeline visitor implementation that processes a Substrait plan in multiple stages.

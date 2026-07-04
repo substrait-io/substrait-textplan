@@ -643,7 +643,7 @@ impl<'input> SubqueryRelationVisitor<'input> {
                 // Second: fix expressions in the extracted proto
                 // Now fix_expression_outer_references can lock relation_symbol as needed
                 if let Some(mut relation) = relation_proto {
-                    use substrait::proto::rel::RelType;
+                    use substrait::rel::RelType;
                     if let Some(rel_type) = &mut relation.rel_type {
                         match rel_type {
                             RelType::Filter(filter_rel) => {
@@ -671,9 +671,7 @@ impl<'input> SubqueryRelationVisitor<'input> {
                                     if let Some(measure_func) = &mut measure.measure {
                                         for arg in &mut measure_func.arguments {
                                             if let Some(
-                                                substrait::proto::function_argument::ArgType::Value(
-                                                    expr,
-                                                ),
+                                                substrait::function_argument::ArgType::Value(expr),
                                             ) = &mut arg.arg_type
                                             {
                                                 self.fix_expression_outer_references(
@@ -707,22 +705,20 @@ impl<'input> SubqueryRelationVisitor<'input> {
     /// Recursively fixes outer references in an expression and its sub-expressions.
     fn fix_expression_outer_references(
         &self,
-        expr: &mut substrait::proto::Expression,
+        expr: &mut substrait::Expression,
         relation_symbol: &Arc<SymbolInfo>,
     ) {
-        use substrait::proto::expression::RexType;
+        use substrait::expression::RexType;
 
         match &mut expr.rex_type {
             Some(RexType::Selection(field_ref)) => {
                 // This is a field reference - check if it needs to be an outer reference
                 if let Some(
-                    substrait::proto::expression::field_reference::ReferenceType::DirectReference(
-                        ref_seg,
-                    ),
+                    substrait::expression::field_reference::ReferenceType::DirectReference(ref_seg),
                 ) = &mut field_ref.reference_type
                 {
                     if let Some(
-                        substrait::proto::expression::reference_segment::ReferenceType::StructField(
+                        substrait::expression::reference_segment::ReferenceType::StructField(
                             struct_field,
                         ),
                     ) = &mut ref_seg.reference_type
@@ -750,8 +746,8 @@ impl<'input> SubqueryRelationVisitor<'input> {
                                     correct_field_index, steps_out
                                 );
                                 field_ref.root_type = Some(
-                                    substrait::proto::expression::field_reference::RootType::OuterReference(
-                                        substrait::proto::expression::field_reference::OuterReference {
+                                    substrait::expression::field_reference::RootType::OuterReference(
+                                        substrait::expression::field_reference::OuterReference {
                                             steps_out: steps_out as u32,
                                         },
                                     ),
@@ -764,8 +760,8 @@ impl<'input> SubqueryRelationVisitor<'input> {
                                 // Ensure it has root_reference
                                 if field_ref.root_type.is_none() {
                                     field_ref.root_type = Some(
-                                        substrait::proto::expression::field_reference::RootType::RootReference(
-                                            substrait::proto::expression::field_reference::RootReference {},
+                                        substrait::expression::field_reference::RootType::RootReference(
+                                            substrait::expression::field_reference::RootReference {},
                                         ),
                                     );
                                 }
@@ -781,7 +777,7 @@ impl<'input> SubqueryRelationVisitor<'input> {
             Some(RexType::ScalarFunction(func)) => {
                 // Recursively fix arguments
                 for arg in &mut func.arguments {
-                    if let Some(substrait::proto::function_argument::ArgType::Value(inner_expr)) =
+                    if let Some(substrait::function_argument::ArgType::Value(inner_expr)) =
                         &mut arg.arg_type
                     {
                         self.fix_expression_outer_references(inner_expr, relation_symbol);

@@ -218,11 +218,11 @@ fn fix_outer_references_in_subqueries(
 
 /// Recursively fixes outer references in a relation and its nested expressions.
 fn fix_outer_refs_in_rel(
-    rel: &mut substrait::proto::Rel,
+    rel: &mut substrait::Rel,
     subquery_field_count: usize,
     symbol_table: &crate::textplan::symbol_table::SymbolTable,
 ) {
-    use substrait::proto::rel::RelType;
+    use substrait::rel::RelType;
 
     match &mut rel.rel_type {
         Some(RelType::Filter(filter)) => {
@@ -246,13 +246,13 @@ fn fix_outer_refs_in_rel(
 
 /// Recursively fixes outer references in an expression.
 fn fix_outer_refs_in_expression(
-    expr: &mut substrait::proto::Expression,
+    expr: &mut substrait::Expression,
     subquery_field_count: usize,
     symbol_table: &crate::textplan::symbol_table::SymbolTable,
 ) {
-    use substrait::proto::expression::field_reference::ReferenceType;
-    use substrait::proto::expression::field_reference::RootType;
-    use substrait::proto::expression::RexType;
+    use substrait::expression::field_reference::ReferenceType;
+    use substrait::expression::field_reference::RootType;
+    use substrait::expression::RexType;
 
     match &mut expr.rex_type {
         Some(RexType::Selection(selection)) => {
@@ -261,7 +261,12 @@ fn fix_outer_refs_in_expression(
                 // This is a root reference - check if it should be outer
                 if let Some(ref_type) = &selection.reference_type {
                     if let ReferenceType::DirectReference(direct_ref) = ref_type {
-                        if let Some(substrait::proto::expression::reference_segment::ReferenceType::StructField(struct_field)) = &direct_ref.reference_type {
+                        if let Some(
+                            substrait::expression::reference_segment::ReferenceType::StructField(
+                                struct_field,
+                            ),
+                        ) = &direct_ref.reference_type
+                        {
                             // We need to determine if this field belongs to the current relation's schema
                             // or to the parent relation's schema
 
@@ -271,16 +276,19 @@ fn fix_outer_refs_in_expression(
 
                             // If field_index >= subquery_field_count, it's likely an outer reference
                             // (subquery_field_count was passed as a parameter to avoid re-locking)
-                            println!("      Checking field[{}] against subquery field_count={}", field_index, subquery_field_count);
+                            println!(
+                                "      Checking field[{}] against subquery field_count={}",
+                                field_index, subquery_field_count
+                            );
                             if field_index >= subquery_field_count && subquery_field_count > 0 {
                                 println!("      Converting field[{}] from rootReference to outerReference (subquery has {} fields)",
                                     field_index, subquery_field_count);
 
                                 // Convert to outer reference
                                 selection.root_type = Some(RootType::OuterReference(
-                                    substrait::proto::expression::field_reference::OuterReference {
+                                    substrait::expression::field_reference::OuterReference {
                                         steps_out: 1,
-                                    }
+                                    },
                                 ));
                             }
                         }
@@ -290,7 +298,7 @@ fn fix_outer_refs_in_expression(
         }
         Some(RexType::ScalarFunction(func)) => {
             for arg in &mut func.arguments {
-                if let Some(substrait::proto::function_argument::ArgType::Value(inner_expr)) =
+                if let Some(substrait::function_argument::ArgType::Value(inner_expr)) =
                     &mut arg.arg_type
                 {
                     fix_outer_refs_in_expression(inner_expr, subquery_field_count, symbol_table);
@@ -303,7 +311,7 @@ fn fix_outer_refs_in_expression(
             }
         }
         Some(RexType::Subquery(subquery)) => {
-            use substrait::proto::expression::subquery::SubqueryType;
+            use substrait::expression::subquery::SubqueryType;
 
             // Don't recurse into nested subqueries - they'll be handled separately
             if let Some(SubqueryType::SetComparison(set_comp)) = &mut subquery.subquery_type {

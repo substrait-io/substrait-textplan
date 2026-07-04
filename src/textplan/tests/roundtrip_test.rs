@@ -29,7 +29,7 @@ mod tests {
     /// 1. Sort extension_urns by URI string and renumber anchors from 1
     /// 2. Sort extensions by (uri_reference, name) and renumber function_anchor from 0
     /// 3. Update all references throughout the plan
-    fn normalize_plan(mut plan: ::substrait::proto::Plan) -> ::substrait::proto::Plan {
+    fn normalize_plan(mut plan: ::substrait::Plan) -> ::substrait::Plan {
         use std::collections::HashMap;
 
         // Clear version field (always ignored in comparison)
@@ -51,7 +51,7 @@ mod tests {
 
         // Update function URI references
         for ext in plan.extensions.iter_mut() {
-            if let Some(::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref mut f)) = ext.mapping_type {
+            if let Some(::substrait::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref mut f)) = ext.mapping_type {
                 if let Some(&new_ref) = uri_mapping.get(&f.extension_urn_reference) {
                     f.extension_urn_reference = new_ref;
                 }
@@ -63,12 +63,12 @@ mod tests {
 
         // Sort by (uri_reference, name)
         plan.extensions.sort_by(|a, b| {
-            let a_func = if let Some(::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref f)) = a.mapping_type {
+            let a_func = if let Some(::substrait::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref f)) = a.mapping_type {
                 Some(f)
             } else {
                 None
             };
-            let b_func = if let Some(::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref f)) = b.mapping_type {
+            let b_func = if let Some(::substrait::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref f)) = b.mapping_type {
                 Some(f)
             } else {
                 None
@@ -83,7 +83,7 @@ mod tests {
 
         // Renumber from 0 and build mapping
         for (new_anchor, ext) in plan.extensions.iter_mut().enumerate() {
-            if let Some(::substrait::proto::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref mut f)) = ext.mapping_type {
+            if let Some(::substrait::extensions::simple_extension_declaration::MappingType::ExtensionFunction(ref mut f)) = ext.mapping_type {
                 let old_anchor = f.function_anchor;
                 let new_anchor_val = new_anchor as u32;
                 function_mapping.insert(old_anchor, new_anchor_val);
@@ -101,10 +101,10 @@ mod tests {
 
     /// Recursively normalize function references in expressions
     fn normalize_expression(
-        expr: &mut ::substrait::proto::Expression,
+        expr: &mut ::substrait::Expression,
         mapping: &std::collections::HashMap<u32, u32>,
     ) {
-        use ::substrait::proto::expression::RexType;
+        use ::substrait::expression::RexType;
 
         match &mut expr.rex_type {
             Some(RexType::ScalarFunction(ref mut func)) => {
@@ -112,9 +112,8 @@ mod tests {
                     func.function_reference = new_ref;
                 }
                 for arg in func.arguments.iter_mut() {
-                    if let Some(::substrait::proto::function_argument::ArgType::Value(
-                        ref mut val,
-                    )) = arg.arg_type
+                    if let Some(::substrait::function_argument::ArgType::Value(ref mut val)) =
+                        arg.arg_type
                     {
                         normalize_expression(val, mapping);
                     }
@@ -139,7 +138,7 @@ mod tests {
                 }
             }
             Some(RexType::Subquery(ref mut subquery)) => {
-                use ::substrait::proto::expression::subquery::SubqueryType;
+                use ::substrait::expression::subquery::SubqueryType;
                 match &mut subquery.subquery_type {
                     Some(SubqueryType::Scalar(ref mut scalar)) => {
                         if let Some(ref mut input) = scalar.input {
@@ -176,10 +175,10 @@ mod tests {
 
     /// Recursively normalize function references in relations
     fn normalize_relation(
-        rel: &mut ::substrait::proto::Rel,
+        rel: &mut ::substrait::Rel,
         mapping: &std::collections::HashMap<u32, u32>,
     ) {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         match &mut rel.rel_type {
             Some(RelType::Read(ref mut read)) => {
@@ -213,7 +212,7 @@ mod tests {
                             agg_func.function_reference = new_ref;
                         }
                         for arg in agg_func.arguments.iter_mut() {
-                            if let Some(::substrait::proto::function_argument::ArgType::Value(
+                            if let Some(::substrait::function_argument::ArgType::Value(
                                 ref mut val,
                             )) = arg.arg_type
                             {
@@ -306,10 +305,10 @@ mod tests {
 
     /// Normalize function references in a PlanRel (root or rel)
     fn normalize_plan_relation(
-        plan_rel: &mut ::substrait::proto::PlanRel,
+        plan_rel: &mut ::substrait::PlanRel,
         mapping: &std::collections::HashMap<u32, u32>,
     ) {
-        use ::substrait::proto::plan_rel::RelType;
+        use ::substrait::plan_rel::RelType;
 
         match &mut plan_rel.rel_type {
             Some(RelType::Root(ref mut root)) => {

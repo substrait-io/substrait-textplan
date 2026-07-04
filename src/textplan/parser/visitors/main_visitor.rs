@@ -16,7 +16,7 @@ use crate::textplan::parser::antlr::substraitplanparser::*;
 use crate::textplan::parser::antlr::substraitplanparservisitor::SubstraitPlanParserVisitor;
 use crate::textplan::parser::error_listener::ErrorListener;
 use crate::textplan::symbol_table::{RelationType, SymbolInfo, SymbolTable, SymbolType};
-use ::substrait::proto::{rel::RelType, Rel};
+use ::substrait::{rel::RelType, Rel};
 
 use super::{extract_from_string, token_to_location, PlanVisitor, TypeVisitor};
 
@@ -455,10 +455,10 @@ impl<'input> MainPlanVisitor<'input> {
                 "join" => (
                     RelationType::Join,
                     Rel {
-                        rel_type: Some(RelType::Join(Box::new(::substrait::proto::JoinRel {
-                            common: Some(::substrait::proto::RelCommon {
-                                emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                                    ::substrait::proto::rel_common::Direct {},
+                        rel_type: Some(RelType::Join(Box::new(::substrait::JoinRel {
+                            common: Some(::substrait::RelCommon {
+                                emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                                    ::substrait::rel_common::Direct {},
                                 )),
                                 ..Default::default()
                             }),
@@ -469,10 +469,10 @@ impl<'input> MainPlanVisitor<'input> {
                 "cross" => (
                     RelationType::Cross,
                     Rel {
-                        rel_type: Some(RelType::Cross(Box::new(::substrait::proto::CrossRel {
-                            common: Some(::substrait::proto::RelCommon {
-                                emit_kind: Some(::substrait::proto::rel_common::EmitKind::Direct(
-                                    ::substrait::proto::rel_common::Direct {},
+                        rel_type: Some(RelType::Cross(Box::new(::substrait::CrossRel {
+                            common: Some(::substrait::RelCommon {
+                                emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                                    ::substrait::rel_common::Direct {},
                                 )),
                                 ..Default::default()
                             }),
@@ -487,13 +487,13 @@ impl<'input> MainPlanVisitor<'input> {
                     },
                 ),
                 "aggregate" => {
-                    let mut agg_rel = ::substrait::proto::AggregateRel::default();
+                    let mut agg_rel = ::substrait::AggregateRel::default();
                     // Add empty grouping (required if no measures)
                     #[allow(deprecated)]
                     {
                         agg_rel
                             .groupings
-                            .push(::substrait::proto::aggregate_rel::Grouping {
+                            .push(::substrait::aggregate_rel::Grouping {
                                 grouping_expressions: Vec::new(),
                                 expression_references: Vec::new(),
                             });
@@ -520,43 +520,35 @@ impl<'input> MainPlanVisitor<'input> {
                 "set" => (
                     RelationType::Set,
                     Rel {
-                        rel_type: Some(RelType::Set(::substrait::proto::SetRel::default())),
+                        rel_type: Some(RelType::Set(::substrait::SetRel::default())),
                     },
                 ),
                 "hash_join" => (
                     RelationType::HashJoin,
                     Rel {
-                        rel_type: Some(RelType::HashJoin(Box::new(
-                            ::substrait::proto::HashJoinRel {
-                                common: Some(::substrait::proto::RelCommon {
-                                    emit_kind: Some(
-                                        ::substrait::proto::rel_common::EmitKind::Direct(
-                                            ::substrait::proto::rel_common::Direct {},
-                                        ),
-                                    ),
-                                    ..Default::default()
-                                }),
+                        rel_type: Some(RelType::HashJoin(Box::new(::substrait::HashJoinRel {
+                            common: Some(::substrait::RelCommon {
+                                emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                                    ::substrait::rel_common::Direct {},
+                                )),
                                 ..Default::default()
-                            },
-                        ))),
+                            }),
+                            ..Default::default()
+                        }))),
                     },
                 ),
                 "merge_join" => (
                     RelationType::MergeJoin,
                     Rel {
-                        rel_type: Some(RelType::MergeJoin(Box::new(
-                            ::substrait::proto::MergeJoinRel {
-                                common: Some(::substrait::proto::RelCommon {
-                                    emit_kind: Some(
-                                        ::substrait::proto::rel_common::EmitKind::Direct(
-                                            ::substrait::proto::rel_common::Direct {},
-                                        ),
-                                    ),
-                                    ..Default::default()
-                                }),
+                        rel_type: Some(RelType::MergeJoin(Box::new(::substrait::MergeJoinRel {
+                            common: Some(::substrait::RelCommon {
+                                emit_kind: Some(::substrait::rel_common::EmitKind::Direct(
+                                    ::substrait::rel_common::Direct {},
+                                )),
                                 ..Default::default()
-                            },
-                        ))),
+                            }),
+                            ..Default::default()
+                        }))),
                     },
                 ),
                 "exchange" => (
@@ -581,7 +573,7 @@ impl<'input> MainPlanVisitor<'input> {
                     RelationType::ExtensionLeaf,
                     Rel {
                         rel_type: Some(RelType::ExtensionLeaf(
-                            ::substrait::proto::ExtensionLeafRel::default(),
+                            ::substrait::ExtensionLeafRel::default(),
                         )),
                     },
                 ),
@@ -595,7 +587,7 @@ impl<'input> MainPlanVisitor<'input> {
                     RelationType::ExtensionMulti,
                     Rel {
                         rel_type: Some(RelType::ExtensionMulti(
-                            ::substrait::proto::ExtensionMultiRel::default(),
+                            ::substrait::ExtensionMultiRel::default(),
                         )),
                     },
                 ),

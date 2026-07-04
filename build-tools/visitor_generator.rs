@@ -170,8 +170,8 @@ impl VisitorGenerator {
 extern crate substrait;
 
 use crate::textplan::common::ProtoLocation;
-use substrait::proto;
-use substrait::proto::extensions;
+use substrait as proto;
+use substrait::extensions;
 
 #[allow(deprecated,unused_variables,unreachable_patterns)]
 

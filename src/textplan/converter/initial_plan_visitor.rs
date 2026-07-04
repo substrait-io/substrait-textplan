@@ -15,7 +15,6 @@ use crate::textplan::converter::generated::PlanProtoVisitor;
 use crate::textplan::converter::generated::Traversable;
 use crate::textplan::symbol_table::SourceType;
 use crate::textplan::{ProtoLocation, SymbolInfo, SymbolType};
-use ::substrait::proto as substrait;
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -741,9 +740,10 @@ impl PlanProtoVisitor for InitialPlanVisitor {
             self.current_location().clone(),
             SymbolType::PlanRelation,
             /* subtype */ None,
-            Some(Arc::new(Mutex::new(RelationData::new(
-                ::substrait::proto::Rel::default(),
-            ))) as Arc<Mutex<dyn Any + Send + Sync>>),
+            Some(
+                Arc::new(Mutex::new(RelationData::new(::substrait::Rel::default())))
+                    as Arc<Mutex<dyn Any + Send + Sync>>,
+            ),
         );
     }
 

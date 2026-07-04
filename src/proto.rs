@@ -6,11 +6,11 @@ use crate::textplan::common::error::TextPlanError;
 use prost::Message;
 
 // Define type aliases to make migration easier and code cleaner
-pub type Plan = ::substrait::proto::Plan;
-pub type Rel = ::substrait::proto::Rel;
-pub type PlanRel = ::substrait::proto::PlanRel;
-pub type RelCommon = ::substrait::proto::RelCommon;
-pub type RelType = ::substrait::proto::rel::RelType;
+pub type Plan = ::substrait::Plan;
+pub type Rel = ::substrait::Rel;
+pub type PlanRel = ::substrait::PlanRel;
+pub type RelCommon = ::substrait::RelCommon;
+pub type RelType = ::substrait::rel::RelType;
 
 /// Load a binary protobuf into a Plan
 pub fn load_plan_from_binary(bytes: &[u8]) -> Result<Plan, TextPlanError> {
@@ -93,7 +93,7 @@ pub fn save_plan_to_json(plan: &Plan) -> Result<String, TextPlanError> {
 // TODO: Move this to a more appropriate location.
 /// Get the relation type as a string
 pub fn relation_type_to_string(rel: &Rel) -> &'static str {
-    use ::substrait::proto::rel::RelType;
+    use ::substrait::rel::RelType;
 
     match &rel.rel_type {
         Some(RelType::Read(_)) => "read",

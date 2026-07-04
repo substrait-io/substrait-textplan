@@ -75,8 +75,8 @@ impl ProtoMatcherConfig {
 
 /// Compare two Plan protos and return a list of differences.
 pub fn compare_plans(
-    expected: &::substrait::proto::Plan,
-    actual: &::substrait::proto::Plan,
+    expected: &::substrait::Plan,
+    actual: &::substrait::Plan,
     config: &ProtoMatcherConfig,
 ) -> Vec<ProtoDifference> {
     // Convert both plans to JSON for comparison
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_identical_plans() {
-        let plan = ::substrait::proto::Plan::default();
+        let plan = ::substrait::Plan::default();
         let config = ProtoMatcherConfig::default();
         let diffs = compare_plans(&plan, &plan, &config);
         assert_eq!(diffs.len(), 0);
@@ -237,16 +237,16 @@ mod tests {
 
     #[test]
     fn test_different_versions() {
-        let mut plan1 = ::substrait::proto::Plan::default();
-        let mut plan2 = ::substrait::proto::Plan::default();
+        let mut plan1 = ::substrait::Plan::default();
+        let mut plan2 = ::substrait::Plan::default();
 
-        plan1.version = Some(::substrait::proto::Version {
+        plan1.version = Some(::substrait::Version {
             minor_number: 1,
             producer: "test1".to_string(),
             ..Default::default()
         });
 
-        plan2.version = Some(::substrait::proto::Version {
+        plan2.version = Some(::substrait::Version {
             minor_number: 2,
             producer: "test2".to_string(),
             ..Default::default()

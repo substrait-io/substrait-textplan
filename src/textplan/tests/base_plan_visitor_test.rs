@@ -35,7 +35,7 @@ mod tests {
             &self.visited_locations
         }
 
-        fn visit_plan(&mut self, obj: &substrait::proto::Plan) {
+        fn visit_plan(&mut self, obj: &substrait::Plan) {
             obj.traverse(self);
         }
     }

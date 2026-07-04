@@ -367,7 +367,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract the data we need (clone to avoid holding the lock)
         let (source_name, schema_name, filter_expr) = if let Some(blob_lock) = &relation.blob {
@@ -431,7 +431,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract the condition expression (clone it to avoid holding the lock)
         let condition_expr = if let Some(blob_lock) = &relation.blob {
@@ -471,7 +471,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract the project expressions, common, and generated field names (clone to avoid holding the lock)
         let (expressions, common, generated_field_names) = if let Some(blob_lock) = &relation.blob {
@@ -519,9 +519,7 @@ impl PlanPrinter {
 
         // Print emit from common
         if let Some(common_val) = common {
-            if let Some(::substrait::proto::rel_common::EmitKind::Emit(emit)) =
-                &common_val.emit_kind
-            {
+            if let Some(::substrait::rel_common::EmitKind::Emit(emit)) = &common_val.emit_kind {
                 if !expressions.is_empty() && !emit.output_mapping.is_empty() {
                     result.push('\n');
                 }
@@ -544,7 +542,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract grouping_expressions and measures (clone to avoid holding the lock)
         #[allow(deprecated)]
@@ -611,12 +609,19 @@ impl PlanPrinter {
                 // Add invocation if not unspecified (following C++ pattern)
                 // Only print invocation when it's explicitly set (not the default)
                 if agg_func.invocation
-                    != ::substrait::proto::aggregate_function::AggregationInvocation::Unspecified
-                        as i32
+                    != ::substrait::aggregate_function::AggregationInvocation::Unspecified as i32
                 {
                     let invocation_str = match agg_func.invocation {
-                        x if x == ::substrait::proto::aggregate_function::AggregationInvocation::All as i32 => "all",
-                        x if x == ::substrait::proto::aggregate_function::AggregationInvocation::Distinct as i32 => {
+                        x if x
+                            == ::substrait::aggregate_function::AggregationInvocation::All
+                                as i32 =>
+                        {
+                            "all"
+                        }
+                        x if x
+                            == ::substrait::aggregate_function::AggregationInvocation::Distinct
+                                as i32 =>
+                        {
                             "distinct"
                         }
                         _ => "unspecified",
@@ -641,7 +646,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract sort fields (clone to avoid holding the lock)
         let sorts = if let Some(blob_lock) = &relation.blob {
@@ -670,10 +675,10 @@ impl PlanPrinter {
                 let expr_text = expr_printer.print_expression(sort_field.expr.as_ref().unwrap())?;
 
                 // Print the direction (following C++ format: "by DIRECTION_NAME")
-                use ::substrait::proto::sort_field::SortKind;
+                use ::substrait::sort_field::SortKind;
                 let direction_suffix = match &sort_field.sort_kind {
                     Some(SortKind::Direction(dir)) => {
-                        use ::substrait::proto::sort_field::SortDirection;
+                        use ::substrait::sort_field::SortDirection;
                         match SortDirection::try_from(*dir) {
                             Ok(SortDirection::AscNullsFirst) => " by ASC_NULLS_FIRST".to_string(),
                             Ok(SortDirection::AscNullsLast) => " by ASC_NULLS_LAST".to_string(),
@@ -707,8 +712,8 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::fetch_rel::{CountMode, OffsetMode};
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::fetch_rel::{CountMode, OffsetMode};
+        use ::substrait::rel::RelType;
 
         // Extract offset and count from FetchRel using deprecated mode fields
         let (offset, count) = if let Some(blob_lock) = &relation.blob {
@@ -755,7 +760,7 @@ impl PlanPrinter {
         indent: &str,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::rel::RelType;
+        use ::substrait::rel::RelType;
 
         // Extract join properties (clone to avoid holding the lock)
         let (join_type, join_expression) = if let Some(blob_lock) = &relation.blob {
@@ -887,8 +892,8 @@ impl PlanPrinter {
     /// # Returns
     ///
     /// The RelationType enum value
-    fn rel_type_from_proto(rel: &::substrait::proto::Rel) -> RelationType {
-        use ::substrait::proto::rel::RelType;
+    fn rel_type_from_proto(rel: &::substrait::Rel) -> RelationType {
+        use ::substrait::rel::RelType;
 
         match &rel.rel_type {
             Some(RelType::Read(_)) => RelationType::Read,
@@ -1096,7 +1101,7 @@ impl PlanPrinter {
                             if let Some(blob_lock) = &field.blob {
                                 if let Ok(blob_data) = blob_lock.lock() {
                                     if let Some(field_type) =
-                                        blob_data.downcast_ref::<::substrait::proto::Type>()
+                                        blob_data.downcast_ref::<::substrait::Type>()
                                     {
                                         // Use ExpressionPrinter to format the type
                                         let expr_printer =
@@ -1127,7 +1132,7 @@ impl PlanPrinter {
         symbol_table: &SymbolTable,
         result: &mut String,
     ) -> Result<(), TextPlanError> {
-        use ::substrait::proto::read_rel::{ExtensionTable, LocalFiles, NamedTable, VirtualTable};
+        use ::substrait::read_rel::{ExtensionTable, LocalFiles, NamedTable, VirtualTable};
 
         let sources: Vec<_> = symbol_table
             .symbols()
@@ -1160,7 +1165,7 @@ impl PlanPrinter {
 
                                     // Print the path type
                                     if let Some(path_type) = &item.path_type {
-                                        use ::substrait::proto::read_rel::local_files::file_or_files::PathType;
+                                        use ::substrait::read_rel::local_files::file_or_files::PathType;
                                         match path_type {
                                             PathType::UriFile(uri) => {
                                                 result.push_str(&format!("uri_file: \"{}\"", uri));
@@ -1191,7 +1196,7 @@ impl PlanPrinter {
 
                                     // Print file format
                                     if let Some(file_format) = &item.file_format {
-                                        use ::substrait::proto::read_rel::local_files::file_or_files::FileFormat;
+                                        use ::substrait::read_rel::local_files::file_or_files::FileFormat;
                                         match file_format {
                                             FileFormat::Parquet(_) => {
                                                 result.push_str(" parquet: {}")
@@ -1401,7 +1406,7 @@ impl PlanPrinter {
     fn lookup_measure_name(
         &self,
         symbol_table: &SymbolTable,
-        _measure: &::substrait::proto::aggregate_rel::Measure,
+        _measure: &::substrait::aggregate_rel::Measure,
     ) -> Option<String> {
         // Search for a Measure symbol
         // For now, return a simple search - in the future we might need to match by location
@@ -1426,7 +1431,7 @@ impl PlanPrinter {
                     // For aggregates, measures are in generated_field_references after grouping fields
                     // First, determine how many grouping fields there are
                     let num_grouping_fields =
-                        if let Some(::substrait::proto::rel::RelType::Aggregate(ref agg_rel)) =
+                        if let Some(::substrait::rel::RelType::Aggregate(ref agg_rel)) =
                             relation_data.relation.rel_type
                         {
                             agg_rel

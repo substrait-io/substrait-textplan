@@ -1,0 +1,7 @@
+[advisories]
+# instant is unmaintained (RUSTSEC-2024-0384) but reaches us only transitively
+# through antlr-rust 0.3.0-beta -> parking_lot 0.11, which still depends on it.
+# parking_lot dropped instant in 0.12, but antlr-rust pins ^0.11 and has no newer
+# release, so it cannot be removed from our tree. It is a timekeeping shim with no
+# known vulnerability; ignore the advisory until antlr-rust updates.
+ignore = ["RUSTSEC-2024-0384"]

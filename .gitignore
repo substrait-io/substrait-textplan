@@ -1,0 +1,78 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# IDE files
+*~
+.vscode/
+.idea/
+**/.idea/
+*.iml
+.idea_modules/
+
+# Common CMake Build directory
+build/
+
+# Generated code
+src/proto/substrait
+
+# Rust-specific
+/target/
+/*/target/
+**/*.rs.bk
+Cargo.lock
+!Cargo.lock
+
+# OS-specific
+.DS_Store
+.directory
+Thumbs.db
+
+# Antlr4 artifacts
+*.interp
+*.tokens
+src/textplan/parser/antlr/*.rs
+src/textplan/parser/antlr/src/
+!src/textplan/parser/antlr/mod.rs
+
+vendor/
+build-tools/antlr*
+
+# Generated proto visitor code
+src/textplan/converter/generated/base_plan_visitor.rs
+src/textplan/converter/generated/proto_descriptor.bin
+src/textplan/converter/generated/substrait.rs
+src/textplan/converter/generated/substrait.extensions.rs
+
+# C++ reference code
+src/substrait/textplan
+
+# Python artifacts
+python/__pycache__/
+python/dist/
+python/*.egg-info/

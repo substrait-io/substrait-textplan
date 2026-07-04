@@ -1,0 +1,201 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  ANTLR_JAR_URL: https://github.com/rrevenantt/antlr4rust/releases/download/antlr4-4.8-2-Rust0.3.0-beta/antlr4-4.8-2-SNAPSHOT-complete.jar
+  ANTLR_JAR_VERSION: antlr4-4.8-2-Rust0.3.0-beta
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Java for ANTLR (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre protobuf-compiler
+
+    - name: Install Java for ANTLR and Protobuf (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install openjdk@11 protobuf
+
+    - name: Cache ANTLR JAR
+      id: cache-antlr
+      uses: actions/cache@v4
+      with:
+        path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
+
+    - name: Download ANTLR JAR with Rust support
+      if: steps.cache-antlr.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p build-tools
+        curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+        echo "Downloaded ANTLR JAR to build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar"
+        # Verify the JAR file is valid
+        file build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+        echo "Verified JAR file integrity"
+
+    - name: Verify ANTLR JAR integrity
+      run: |
+        if [ ! -f build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ]; then
+          echo "ERROR: ANTLR JAR file not found"
+          exit 1
+        fi
+        # Test if the JAR is valid
+        if ! unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null 2>&1; then
+          echo "ERROR: ANTLR JAR file is corrupted, re-downloading..."
+          curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+          unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+          echo "Re-downloaded and verified JAR file"
+        else
+          echo "ANTLR JAR file is valid"
+        fi
+
+    - name: Set ANTLR_JAR environment variable
+      run: echo "ANTLR_JAR=$(pwd)/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar" >> $GITHUB_ENV
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+
+    - name: Cache cargo dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Generate ANTLR Parser
+      run: GENERATE_ANTLR=true cargo check
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Run tests
+      run: cargo test --verbose
+
+    - name: Run clippy
+      run: cargo clippy --all-features
+
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Test Python bindings
+      run: |
+        cd python
+        python -m unittest discover -v
+
+  build_release:
+    name: Build Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Java for ANTLR (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre protobuf-compiler
+
+    - name: Install Java for ANTLR and Protobuf (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install openjdk@11 protobuf
+
+    - name: Cache ANTLR JAR
+      id: cache-antlr
+      uses: actions/cache@v4
+      with:
+        path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
+
+    - name: Download ANTLR JAR with Rust support
+      if: steps.cache-antlr.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p build-tools
+        curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+        echo "Downloaded ANTLR JAR to build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar"
+        # Verify the JAR file is valid
+        file build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+        echo "Verified JAR file integrity"
+
+    - name: Verify ANTLR JAR integrity
+      run: |
+        if [ ! -f build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ]; then
+          echo "ERROR: ANTLR JAR file not found"
+          exit 1
+        fi
+        # Test if the JAR is valid
+        if ! unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null 2>&1; then
+          echo "ERROR: ANTLR JAR file is corrupted, re-downloading..."
+          curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+          unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+          echo "Re-downloaded and verified JAR file"
+        else
+          echo "ANTLR JAR file is valid"
+        fi
+
+    - name: Set ANTLR_JAR environment variable
+      run: echo "ANTLR_JAR=$(pwd)/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar" >> $GITHUB_ENV
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+
+    - name: Cache cargo dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Generate ANTLR Parser
+      run: GENERATE_ANTLR=true cargo check
+
+    - name: Build in release mode
+      run: cargo build --release --verbose
+
+    - name: Upload library artifact (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: libsubstrait_textplan-macos
+        path: |
+          target/release/libsubstrait_textplan.dylib
+        retention-days: 7
+
+    - name: Upload library artifact (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: libsubstrait_textplan-linux
+        path: |
+          target/release/libsubstrait_textplan.so
+        retention-days: 7

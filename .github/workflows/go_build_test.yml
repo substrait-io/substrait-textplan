@@ -1,0 +1,123 @@
+name: Go Build and Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'go/**'
+      - 'src/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'grammar/**'
+      - '.github/workflows/go_build_test.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'go/**'
+      - 'src/**'
+      - 'build.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'grammar/**'
+      - '.github/workflows/go_build_test.yml'
+  workflow_dispatch:
+
+env:
+  ANTLR_JAR_URL: https://github.com/rrevenantt/antlr4rust/releases/download/antlr4-4.8-2-Rust0.3.0-beta/antlr4-4.8-2-SNAPSHOT-complete.jar
+  ANTLR_JAR_VERSION: antlr4-4.8-2-Rust0.3.0-beta
+
+jobs:
+  build_and_test:
+    name: Build and Test Go
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        go-version: ['1.19', '1.20']
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Install Java for ANTLR (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre protobuf-compiler
+
+    - name: Install Java for ANTLR and Protobuf (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install openjdk@11 protobuf
+
+    - name: Cache ANTLR JAR
+      id: cache-antlr
+      uses: actions/cache@v4
+      with:
+        path: build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        key: antlr-jar-${{ env.ANTLR_JAR_VERSION }}
+
+    - name: Download ANTLR JAR with Rust support
+      if: steps.cache-antlr.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p build-tools
+        curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+        echo "Downloaded ANTLR JAR to build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar"
+        # Verify the JAR file is valid
+        file build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar
+        unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+        echo "Verified JAR file integrity"
+
+    - name: Verify ANTLR JAR integrity
+      run: |
+        if [ ! -f build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ]; then
+          echo "ERROR: ANTLR JAR file not found"
+          exit 1
+        fi
+        # Test if the JAR is valid
+        if ! unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null 2>&1; then
+          echo "ERROR: ANTLR JAR file is corrupted, re-downloading..."
+          curl -L -f -o build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar ${{ env.ANTLR_JAR_URL }}
+          unzip -t build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar > /dev/null
+          echo "Re-downloaded and verified JAR file"
+        else
+          echo "ANTLR JAR file is valid"
+        fi
+
+    - name: Set ANTLR_JAR environment variable
+      run: echo "ANTLR_JAR=$(pwd)/build-tools/antlr4-4.8-2-SNAPSHOT-complete.jar" >> $GITHUB_ENV
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+
+    - name: Cache cargo dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Generate ANTLR Parser and Build Rust library
+      run: GENERATE_ANTLR=true cargo build --lib
+
+    - name: Build Go package
+      run: |
+        cd go
+        go build -v ./substrait
+        go build -v -o /dev/null ./examples
+
+    - name: Test Go package
+      run: |
+        cd go
+        go test -v ./substrait
+
+    - name: Go mod tidy
+      run: |
+        cd go
+        go mod tidy
+        git diff --exit-code go.mod go.sum

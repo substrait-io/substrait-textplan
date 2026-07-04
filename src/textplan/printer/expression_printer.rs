@@ -667,9 +667,51 @@ impl<'a> ExpressionPrinter<'a> {
                 result.push_str(&format!("<{},{}>", dec_type.precision, dec_type.scale));
                 return Ok(result);
             }
-            Some(Kind::Struct(_)) => return Ok("STRUCT_TYPE_NOT_YET_IMPLEMENTED".to_string()),
-            Some(Kind::List(_)) => return Ok("LIST_TYPE_NOT_YET_IMPLEMENTED".to_string()),
-            Some(Kind::Map(_)) => return Ok("MAP_TYPE_NOT_YET_IMPLEMENTED".to_string()),
+            Some(Kind::List(list_type)) => {
+                result.push_str("list");
+                if list_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32
+                {
+                    result.push('?');
+                }
+                let element = match &list_type.r#type {
+                    Some(t) => self.print_type(t)?,
+                    None => String::new(),
+                };
+                result.push_str(&format!("<{}>", element));
+                return Ok(result);
+            }
+            Some(Kind::Struct(struct_type)) => {
+                result.push_str("struct");
+                if struct_type.nullability
+                    == ::substrait::proto::r#type::Nullability::Nullable as i32
+                {
+                    result.push('?');
+                }
+                let fields = struct_type
+                    .types
+                    .iter()
+                    .map(|t| self.print_type(t))
+                    .collect::<Result<Vec<_>, _>>()?;
+                result.push_str(&format!("<{}>", fields.join(", ")));
+                return Ok(result);
+            }
+            Some(Kind::Map(map_type)) => {
+                result.push_str("map");
+                if map_type.nullability == ::substrait::proto::r#type::Nullability::Nullable as i32
+                {
+                    result.push('?');
+                }
+                let key = match &map_type.key {
+                    Some(t) => self.print_type(t)?,
+                    None => String::new(),
+                };
+                let value = match &map_type.value {
+                    Some(t) => self.print_type(t)?,
+                    None => String::new(),
+                };
+                result.push_str(&format!("<{}, {}>", key, value));
+                return Ok(result);
+            }
             Some(Kind::UserDefined(_)) => {
                 return Ok("USER_DEFINED_TYPE_NOT_YET_IMPLEMENTED".to_string())
             }
@@ -1089,4 +1131,82 @@ fn escape_string(s: &str) -> String {
         }
     }
     result
+}
+
+#[cfg(test)]
+mod type_printer_tests {
+    use super::ExpressionPrinter;
+    use crate::textplan::symbol_table::SymbolTable;
+    use ::substrait::proto::r#type::{Kind, List, Map, Nullability, Struct};
+    use ::substrait::proto::Type;
+
+    fn typed(kind: Kind) -> Type {
+        Type { kind: Some(kind) }
+    }
+
+    fn i32t() -> Type {
+        typed(Kind::I32(::substrait::proto::r#type::I32 {
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        }))
+    }
+
+    fn stringt() -> Type {
+        typed(Kind::String(::substrait::proto::r#type::String {
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        }))
+    }
+
+    fn i64t() -> Type {
+        typed(Kind::I64(::substrait::proto::r#type::I64 {
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        }))
+    }
+
+    /// struct/list/map types print in the same syntax the parser accepts, so a
+    /// binary plan carrying them round-trips through text.
+    #[test]
+    fn prints_compound_types() {
+        let st = SymbolTable::new();
+        let p = ExpressionPrinter::new(&st, None);
+
+        let list = typed(Kind::List(Box::new(List {
+            r#type: Some(Box::new(i32t())),
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        })));
+        assert_eq!(p.print_type(&list).unwrap(), "list<i32>");
+
+        let nullable_list = typed(Kind::List(Box::new(List {
+            r#type: Some(Box::new(i32t())),
+            nullability: Nullability::Nullable as i32,
+            ..Default::default()
+        })));
+        assert_eq!(p.print_type(&nullable_list).unwrap(), "list?<i32>");
+
+        let s = typed(Kind::Struct(Struct {
+            types: vec![i32t(), stringt()],
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        }));
+        assert_eq!(p.print_type(&s).unwrap(), "struct<i32, string>");
+
+        let m = typed(Kind::Map(Box::new(Map {
+            key: Some(Box::new(stringt())),
+            value: Some(Box::new(i64t())),
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        })));
+        assert_eq!(p.print_type(&m).unwrap(), "map<string, i64>");
+
+        // Nested: list<map<string, i64>> exercises recursive element printing.
+        let nested = typed(Kind::List(Box::new(List {
+            r#type: Some(Box::new(m)),
+            nullability: Nullability::Required as i32,
+            ..Default::default()
+        })));
+        assert_eq!(p.print_type(&nested).unwrap(), "list<map<string, i64>>");
+    }
 }

@@ -310,7 +310,7 @@ impl Eq for SymbolInfo {}
 /// The symbol table is used to track symbols defined in a textplan, such as
 /// relations, schemas, functions, etc. It provides methods for defining symbols,
 /// looking them up by name or location, and iterating over all symbols.
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct SymbolTable {
     /// A map from symbol name to index in the symbols vector.
     names: HashMap<String, usize>,

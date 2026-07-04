@@ -119,6 +119,13 @@ impl InitialPlanVisitor {
         &mut self.symbol_table
     }
 
+    /// Consumes the visitor and returns ownership of its symbol table.
+    ///
+    /// Used to hand the table off to the next stage without copying it.
+    pub fn into_symbol_table(self) -> crate::textplan::symbol_table::SymbolTable {
+        self.symbol_table
+    }
+
     pub fn visit_extended_expression(&mut self, obj: &substrait::ExtendedExpression) {
         obj.traverse(self);
     }

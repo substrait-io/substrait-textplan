@@ -148,8 +148,8 @@ pub fn process_plan_with_visitor(plan: &substrait::proto::Plan) -> Result<String
         }
     }
 
-    // Create a pipeline visitor with the symbol table
-    let mut visitor = PipelineVisitor::new(visitor1.symbol_table_mut().clone());
+    // Create a pipeline visitor, moving the symbol table over from visitor1.
+    let mut visitor = PipelineVisitor::new(visitor1.into_symbol_table());
 
     // Visit the plan to build the symbol table
     visitor.visit_plan(plan);
@@ -167,12 +167,10 @@ pub fn process_plan_with_visitor(plan: &substrait::proto::Plan) -> Result<String
     // Populate sub_query_pipelines by finding subquery relations
     populate_subquery_pipelines(visitor.symbol_table_mut())?;
 
-    // Get the populated symbol table from the visitor
-    let symbol_table = visitor.symbol_table().clone();
-
-    // Create a plan printer and use it to convert the symbol table to a textplan
+    // Convert the populated symbol table to a textplan. The printer only reads
+    // the table, so borrow it directly rather than copying it.
     let mut printer = PlanPrinter::new(TextPlanFormat::Standard);
-    let plan_text = printer.print_plan(&symbol_table)?;
+    let plan_text = printer.print_plan(visitor.symbol_table())?;
 
     Ok(plan_text)
 }

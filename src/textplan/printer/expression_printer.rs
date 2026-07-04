@@ -64,6 +64,10 @@ impl<'a> ExpressionPrinter<'a> {
             Some(RexType::DynamicParameter(_)) => {
                 Ok("DYNAMIC_PARAMETER_NOT_YET_IMPLEMENTED".to_string())
             }
+            Some(RexType::Lambda(_)) => Ok("LAMBDA_NOT_YET_IMPLEMENTED".to_string()),
+            Some(RexType::LambdaInvocation(_)) => {
+                Ok("LAMBDA_INVOCATION_NOT_YET_IMPLEMENTED".to_string())
+            }
             None => Err(TextPlanError::InvalidExpression(
                 "Expression has no rex_type".to_string(),
             )),
@@ -685,6 +689,7 @@ impl<'a> ExpressionPrinter<'a> {
                 return Ok("PRECISION_TIMESTAMP_TZ_TYPE_NOT_YET_IMPLEMENTED".to_string())
             }
             Some(Kind::Alias(_)) => return Ok("ALIAS_TYPE_NOT_YET_IMPLEMENTED".to_string()),
+            Some(Kind::Func(_)) => return Ok("FUNC_TYPE_NOT_YET_IMPLEMENTED".to_string()),
             None => {
                 return Err(TextPlanError::InvalidExpression(
                     "Type has no kind".to_string(),

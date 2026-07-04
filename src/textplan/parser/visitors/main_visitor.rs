@@ -160,8 +160,8 @@ impl<'input> MainPlanVisitor<'input> {
         // Assign an anchor for this function (incrementing counter)
         let anchor = self.num_functions_seen as u32;
 
-        // Get extension_uri_reference from current extension space
-        let extension_uri_reference = if let Some(ext_space) = &self.current_extension_space {
+        // Get extension_urn_reference from current extension space
+        let extension_urn_reference = if let Some(ext_space) = &self.current_extension_space {
             // Get the anchor from the extension space blob
             if let Some(blob_lock) = &ext_space.blob {
                 if let Ok(blob_data) = blob_lock.lock() {
@@ -179,7 +179,7 @@ impl<'input> MainPlanVisitor<'input> {
         // Create FunctionData blob
         let function_data = crate::textplan::common::structured_symbol_data::FunctionData::new(
             full_name.clone(),
-            extension_uri_reference,
+            extension_urn_reference,
             anchor,
         );
         let blob = Some(Arc::new(std::sync::Mutex::new(function_data))
@@ -195,11 +195,11 @@ impl<'input> MainPlanVisitor<'input> {
         );
 
         println!(
-            "  Defined function '{}' (alias '{}') with anchor {}, extension_uri_ref {:?}",
+            "  Defined function '{}' (alias '{}') with anchor {}, extension_urn_ref {:?}",
             full_name,
             symbol.name(),
             anchor,
-            extension_uri_reference
+            extension_urn_reference
         );
 
         Some(symbol)

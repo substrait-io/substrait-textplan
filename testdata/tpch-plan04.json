@@ -1,51 +1,51 @@
 # select o.o_orderpriority, count(*) as order_count from "orders" o where o.o_orderdate >= date '1996-10-01' and o.o_orderdate < date '1996-10-01' + interval '3' month and exists ( select smoke.sh tpch_smoke.sh from "lineitem" l where l.l_orderkey = o.o_orderkey and l.l_commitdate < l.l_receiptdate ) group by o.o_orderpriority order by o.o_orderpriority
 {
-  "extensionUris": [{
-    "extensionUriAnchor": 4,
-    "uri": "/functions_aggregate_generic.yaml"
+  "extensionUrns": [{
+    "extensionUrnAnchor": 4,
+    "urn": "extension:io.substrait:functions_aggregate_generic"
   }, {
-    "extensionUriAnchor": 1,
-    "uri": "/functions_boolean.yaml"
+    "extensionUrnAnchor": 1,
+    "urn": "extension:io.substrait:functions_boolean"
   }, {
-    "extensionUriAnchor": 2,
-    "uri": "/functions_datetime.yaml"
+    "extensionUrnAnchor": 2,
+    "urn": "extension:io.substrait:functions_datetime"
   }, {
-    "extensionUriAnchor": 3,
-    "uri": "/functions_comparison.yaml"
+    "extensionUrnAnchor": 3,
+    "urn": "extension:io.substrait:functions_comparison"
   }],
   "extensions": [{
     "extensionFunction": {
-      "extensionUriReference": 1,
+      "extensionUrnReference": 1,
       "functionAnchor": 0,
       "name": "and:bool"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 1,
       "name": "gte:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 2,
       "name": "lt:date_date"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 2,
+      "extensionUrnReference": 2,
       "functionAnchor": 3,
       "name": "add:date_year"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 3,
+      "extensionUrnReference": 3,
       "functionAnchor": 4,
       "name": "equal:any_any"
     }
   }, {
     "extensionFunction": {
-      "extensionUriReference": 4,
+      "extensionUrnReference": 4,
       "functionAnchor": 5,
       "name": "count:any"
     }

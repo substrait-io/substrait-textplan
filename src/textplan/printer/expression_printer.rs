@@ -152,7 +152,14 @@ impl<'a> ExpressionPrinter<'a> {
                 let value = i128::from_le_bytes(bytes);
                 format!("{}_decimal<{},{}>", value, dec.precision, dec.scale)
             }
-            Some(LiteralType::Struct(_)) => "STRUCT_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
+            Some(LiteralType::Struct(struct_lit)) => {
+                let fields = struct_lit
+                    .fields
+                    .iter()
+                    .map(|f| self.print_literal(f))
+                    .collect::<Result<Vec<_>, _>>()?;
+                format!("{{{}}}", fields.join(", "))
+            }
             Some(LiteralType::Map(map)) => {
                 let mut entries = Vec::new();
                 for kv in &map.key_values {

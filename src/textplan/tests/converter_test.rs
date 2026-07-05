@@ -229,4 +229,54 @@ read relation myread {
             text
         );
     }
+
+    /// Round-trip a plan whose project relation carries a map-literal constant
+    /// expression (`{1_i32: 2_i32}`) through text -> binary -> text, exercising
+    /// both the map-literal parser and printer.
+    #[test]
+    fn test_roundtrip_map_literal() {
+        use crate::proto::load_plan_from_binary;
+
+        let input = r##"pipelines {
+  myread -> myproject -> root;
+}
+
+schema myschema {
+  a i32;
+}
+
+source named_table mytable {
+  names = [
+    "mytable",
+  ]
+}
+
+read relation myread {
+  base_schema myschema;
+  source mytable;
+}
+
+project relation myproject {
+  expression {1_i32: 2_i32};
+}
+"##;
+
+        let parse_result = parse_stream(input);
+        assert!(
+            parse_result.successful(),
+            "parse failed: {:?}",
+            parse_result.all_errors()
+        );
+
+        let symbol_table = parse_result.symbol_table();
+        let binary = save_to_binary(&symbol_table).expect("save_to_binary failed");
+        let plan = load_plan_from_binary(&binary).expect("load_plan_from_binary failed");
+        let text = process_plan_with_visitor(&plan).expect("process_plan_with_visitor failed");
+
+        assert!(
+            text.contains("{1_i32: 2_i32}"),
+            "missing map literal in:\n{}",
+            text
+        );
+    }
 }

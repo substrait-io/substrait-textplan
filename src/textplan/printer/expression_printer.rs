@@ -153,7 +153,21 @@ impl<'a> ExpressionPrinter<'a> {
                 format!("{}_decimal<{},{}>", value, dec.precision, dec.scale)
             }
             Some(LiteralType::Struct(_)) => "STRUCT_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
-            Some(LiteralType::Map(_)) => "MAP_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
+            Some(LiteralType::Map(map)) => {
+                let mut entries = Vec::new();
+                for kv in &map.key_values {
+                    let k = match &kv.key {
+                        Some(l) => self.print_literal(l)?,
+                        None => "NULL".to_string(),
+                    };
+                    let v = match &kv.value {
+                        Some(l) => self.print_literal(l)?,
+                        None => "NULL".to_string(),
+                    };
+                    entries.push(format!("{}: {}", k, v));
+                }
+                format!("{{{}}}", entries.join(", "))
+            }
             Some(LiteralType::TimestampTz(_)) => {
                 "TIMESTAMP_TZ_LITERAL_NOT_YET_IMPLEMENTED".to_string()
             }

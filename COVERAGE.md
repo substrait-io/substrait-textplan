@@ -11,7 +11,9 @@ Legend: ✅ done · ⬜ stubbed
 | Feature | Kind | Group PR | Status |
 |---|---|---|---|
 | `Struct` / `List` / `Map` | type | C1 compound-types | ✅ |
-| `Struct` / `Map` / `List` / `EmptyList` / `EmptyMap` | literal | C2 compound-literals | ⬜ |
+| `Map` | literal | C2 map-literals | ✅ |
+| `Struct` | literal | C2b struct-literals (overloaded with interval `{}`) | ⬜ |
+| `List` / `EmptyList` / `EmptyMap` | literal | C2c list/empty-literals (needs grammar) | ⬜ |
 | `Binary` / `Timestamp` / `TimestampTz` / `UUID` | literal | C3 scalar-literals | ⬜ |
 | `PrecisionTime` / `PrecisionTimestamp` / `PrecisionTimestampTz` / `IntervalCompound` | type + literal | C4 precision-temporal | ⬜ |
 | `MaskedReference` / `ListElementReference` / `MapKeyReference` | field reference | C5 field-references | ⬜ |

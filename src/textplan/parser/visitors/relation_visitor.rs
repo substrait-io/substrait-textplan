@@ -1811,9 +1811,31 @@ impl<'input> RelationVisitor<'input> {
                 // Struct without type suffix
                 Some(LiteralType::I64(0))
             }
+        } else if let Some(map_ctx) = constant_ctx.map_literal() {
+            // Map literal: { key: value, ... }. Keys and values are themselves
+            // constants, so recurse through build_constant and unwrap the Literal.
+            use ::substrait::proto::expression::literal::map::KeyValue;
+            use ::substrait::proto::expression::literal::Map;
+            use ::substrait::proto::expression::RexType;
+
+            let mut key_values = Vec::new();
+            for kv in map_ctx.map_literal_value_all() {
+                let consts = kv.constant_all();
+                if consts.len() >= 2 {
+                    let key = match self.build_constant(&consts[0]).rex_type {
+                        Some(RexType::Literal(lit)) => Some(lit),
+                        _ => None,
+                    };
+                    let value = match self.build_constant(&consts[1]).rex_type {
+                        Some(RexType::Literal(lit)) => Some(lit),
+                        _ => None,
+                    };
+                    key_values.push(KeyValue { key, value });
+                }
+            }
+            Some(LiteralType::Map(Map { key_values }))
         } else {
-            // TODO: Handle map_literal
-            // For now, default to i64(0)
+            // Unknown constant form; default to i64(0)
             Some(LiteralType::I64(0))
         };
 

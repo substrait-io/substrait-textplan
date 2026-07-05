@@ -1521,6 +1521,26 @@ impl<'input> RelationVisitor<'input> {
         }
     }
 
+    /// Build a struct literal (`{ field, field, ... }`) from its field constants.
+    ///
+    /// Fields are themselves constants, so recurse through `build_constant` and
+    /// unwrap the inner `Literal`.
+    fn build_struct_literal(
+        &self,
+        constants: &[Rc<ConstantContextAll<'input>>],
+    ) -> ::substrait::proto::expression::literal::LiteralType {
+        use ::substrait::proto::expression::literal::{LiteralType, Struct};
+        use ::substrait::proto::expression::RexType;
+
+        let mut fields = Vec::new();
+        for c in constants {
+            if let Some(RexType::Literal(lit)) = self.build_constant(c).rex_type {
+                fields.push(lit);
+            }
+        }
+        LiteralType::Struct(Struct { fields })
+    }
+
     /// Build a constant literal expression from a constant AST node
     fn build_constant(
         &self,
@@ -1803,13 +1823,14 @@ impl<'input> RelationVisitor<'input> {
                         }
                     }
                     _ => {
-                        // Unknown struct literal type
-                        Some(LiteralType::I64(0))
+                        // Any other type suffix: a generic struct literal.
+                        Some(self.build_struct_literal(&constants))
                     }
                 }
             } else {
-                // Struct without type suffix
-                Some(LiteralType::I64(0))
+                // Struct literal without a type suffix.
+                let constants = struct_ctx.constant_all();
+                Some(self.build_struct_literal(&constants))
             }
         } else if let Some(map_ctx) = constant_ctx.map_literal() {
             // Map literal: { key: value, ... }. Keys and values are themselves

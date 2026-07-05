@@ -12,7 +12,7 @@ Legend: ✅ done · ⬜ stubbed
 |---|---|---|---|
 | `Struct` / `List` / `Map` | type | C1 compound-types | ✅ |
 | `Map` | literal | C2 map-literals | ✅ |
-| `Struct` | literal | C2b struct-literals (overloaded with interval `{}`) | ⬜ |
+| `Struct` | literal | C2b struct-literals | ✅ |
 | `List` / `EmptyList` / `EmptyMap` | literal | C2c list/empty-literals (needs grammar) | ⬜ |
 | `Binary` / `Timestamp` / `TimestampTz` / `UUID` | literal | C3 scalar-literals | ⬜ |
 | `PrecisionTime` / `PrecisionTimestamp` / `PrecisionTimestampTz` / `IntervalCompound` | type + literal | C4 precision-temporal | ⬜ |

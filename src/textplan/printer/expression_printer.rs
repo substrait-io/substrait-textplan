@@ -91,7 +91,7 @@ impl<'a> ExpressionPrinter<'a> {
             Some(LiteralType::Fp64(v)) => format!("{}_fp64", v),
             Some(LiteralType::String(s)) => format!("\"{}\"", escape_string(s)),
             Some(LiteralType::Binary(_)) => "BINARY_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
-            Some(LiteralType::Timestamp(_)) => "TIMESTAMP_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
+            Some(LiteralType::Timestamp(micros)) => format!("{}_timestamp", micros),
             Some(LiteralType::Date(days)) => format!("{}_date", days),
             Some(LiteralType::Time(micros)) => format!("{}_time", micros),
             Some(LiteralType::IntervalYearToMonth(interval)) => {
@@ -175,9 +175,7 @@ impl<'a> ExpressionPrinter<'a> {
                 }
                 format!("{{{}}}", entries.join(", "))
             }
-            Some(LiteralType::TimestampTz(_)) => {
-                "TIMESTAMP_TZ_LITERAL_NOT_YET_IMPLEMENTED".to_string()
-            }
+            Some(LiteralType::TimestampTz(micros)) => format!("{}_timestamp_tz", micros),
             Some(LiteralType::Uuid(_)) => "UUID_LITERAL_NOT_YET_IMPLEMENTED".to_string(),
             Some(LiteralType::Null(_)) => "NULL".to_string(),
             Some(LiteralType::List(_)) => "LIST_LITERAL_NOT_YET_IMPLEMENTED".to_string(),

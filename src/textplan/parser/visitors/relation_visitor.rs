@@ -1581,6 +1581,12 @@ impl<'input> RelationVisitor<'input> {
                             Some(LiteralType::Time(0))
                         }
                     }
+                    "timestamp" => Some(LiteralType::Timestamp(
+                        number_text.parse::<i64>().unwrap_or(0),
+                    )),
+                    "timestamp_tz" => Some(LiteralType::TimestampTz(
+                        number_text.parse::<i64>().unwrap_or(0),
+                    )),
                     "interval_year" => {
                         // Parse as years directly
                         if let Ok(years) = number_text.parse::<i32>() {

@@ -14,7 +14,8 @@ Legend: ✅ done · ⬜ stubbed
 | `Map` | literal | C2 map-literals | ✅ |
 | `Struct` | literal | C2b struct-literals | ✅ |
 | `List` / `EmptyList` / `EmptyMap` | literal | C2c list/empty-literals (needs grammar) | ⬜ |
-| `Binary` / `Timestamp` / `TimestampTz` / `UUID` | literal | C3 scalar-literals | ⬜ |
+| `Timestamp` / `TimestampTz` | literal | C3 timestamp-literals | ✅ |
+| `Binary` / `UUID` (+ `FixedBinary` round-trip) | literal | C3b hex-literals (needs `0x` lexer) | ⬜ |
 | `PrecisionTime` / `PrecisionTimestamp` / `PrecisionTimestampTz` / `IntervalCompound` | type + literal | C4 precision-temporal | ⬜ |
 | `MaskedReference` / `ListElementReference` / `MapKeyReference` | field reference | C5 field-references | ⬜ |
 | `SwitchExpression` / `SingularOrList` / `MultiOrList` | expression | C6 conditional-exprs | ⬜ |

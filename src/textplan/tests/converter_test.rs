@@ -329,4 +329,59 @@ project relation myproject {
             text
         );
     }
+
+    /// Round-trip a plan whose project relation carries `timestamp` and
+    /// `timestamp_tz` literal constants through text -> binary -> text.
+    #[test]
+    fn test_roundtrip_timestamp_literals() {
+        use crate::proto::load_plan_from_binary;
+
+        let input = r##"pipelines {
+  myread -> myproject -> root;
+}
+
+schema myschema {
+  a i32;
+}
+
+source named_table mytable {
+  names = [
+    "mytable",
+  ]
+}
+
+read relation myread {
+  base_schema myschema;
+  source mytable;
+}
+
+project relation myproject {
+  expression 1234567_timestamp;
+  expression 7654321_timestamp_tz;
+}
+"##;
+
+        let parse_result = parse_stream(input);
+        assert!(
+            parse_result.successful(),
+            "parse failed: {:?}",
+            parse_result.all_errors()
+        );
+
+        let symbol_table = parse_result.symbol_table();
+        let binary = save_to_binary(&symbol_table).expect("save_to_binary failed");
+        let plan = load_plan_from_binary(&binary).expect("load_plan_from_binary failed");
+        let text = process_plan_with_visitor(&plan).expect("process_plan_with_visitor failed");
+
+        assert!(
+            text.contains("1234567_timestamp"),
+            "missing timestamp literal in:\n{}",
+            text
+        );
+        assert!(
+            text.contains("7654321_timestamp_tz"),
+            "missing timestamp_tz literal in:\n{}",
+            text
+        );
+    }
 }
